@@ -25,7 +25,7 @@
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
-    if(ONESIGNAL_APP_ID === "ed92e042-fdd1-4155-b8de-e271d574c3b6") return;
+    if(ONESIGNAL_APP_ID === "KLISTRA-IN-DITT-APP-ID-HÄR") return;
     await OneSignal.init({
       appId: ONESIGNAL_APP_ID,
       notifyButton: { enable: false },
@@ -312,7 +312,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
       <div class="os-step"><div class="os-num">5</div><div>Ladda upp till GitHub → öppna appen → tryck knappen nedan</div></div>
     </div>
 
-    <button class="btn btn-ghost" onclick="requestPushPermission()" id="notif-perm-btn" style="margin-top:10px;">🔔 Aktivera push-notifikationer</button>
+    <button class="btn btn-primary" onclick="requestPushPermission()" id="notif-perm-btn" style="margin-top:10px;">🔔 Aktivera push-notifikationer</button>
 
     <div style="margin-top:14px;">
       <div id="reminders-list"></div>
@@ -981,7 +981,7 @@ function renderSettings(){
   document.getElementById('goal-carb').value=g.carb;document.getElementById('goal-fat').value=g.fat;
   const configured=ONESIGNAL_APP_ID!=="KLISTRA-IN-DITT-APP-ID-HÄR";
   document.getElementById('onesignal-setup-box').style.display=configured?'none':'block';
-  document.getElementById('notif-perm-btn').textContent=configured?'🔔 Aktivera push-notifikationer':'⚠️ Konfigurera OneSignal först';
+  if(!configured) document.getElementById('notif-perm-btn').textContent='⚠️ Konfigurera OneSignal först';
 }
 function saveGoals(){
   saveGoalsData({kcal:parseFloat(document.getElementById('goal-kcal').value)||2000,prot:parseFloat(document.getElementById('goal-prot').value)||150,carb:parseFloat(document.getElementById('goal-carb').value)||200,fat:parseFloat(document.getElementById('goal-fat').value)||65});
