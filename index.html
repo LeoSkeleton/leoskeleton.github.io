@@ -10,41 +10,7 @@
 <title>Makro</title>
 <link rel="manifest" id="manifest-placeholder">
 
-<!-- ===================================================
-     ONESIGNAL: Klistra in ditt App ID nedan
-     Steg:
-     1. Gå till onesignal.com → skapa konto
-     2. New App → Web → Progressive Web App
-     3. Fyll i din GitHub Pages URL
-     4. Kopiera App ID och klistra in nedan
-     =================================================== -->
-<script>
-  const ONESIGNAL_APP_ID = "ed92e042-fdd1-4155-b8de-e271d574c3b6";
-</script>
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    if(ONESIGNAL_APP_ID === "KLISTRA-IN-DITT-APP-ID-HÄR") return;
-    await OneSignal.init({
-      appId: ONESIGNAL_APP_ID,
-      notifyButton: { enable: false },
-      promptOptions: {
-        slidedown: {
-          prompts: [{
-            type: "push",
-            autoPrompt: false,
-            text: {
-              actionMessage: "Vill du få påminnelser att logga dina måltider?",
-              acceptButton: "Ja tack!",
-              cancelButton: "Nej"
-            }
-          }]
-        }
-      }
-    });
-  });
-</script>
+<!-- ntfy.sh används för notifikationer -->
 
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -180,12 +146,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
 .reminder-time{font-size:16px;font-weight:600;}
 .reminder-label{font-size:12px;color:var(--text2);margin-top:2px;}
 
-/* OneSignal setup box */
-.onesignal-box{background:linear-gradient(135deg,rgba(88,166,255,0.1),rgba(63,185,80,0.08));border:1px solid rgba(88,166,255,0.25);border-radius:14px;padding:16px;margin-bottom:12px;}
-.onesignal-box .os-title{font-weight:600;font-size:15px;margin-bottom:6px;}
-.onesignal-box .os-sub{font-size:13px;color:var(--text2);line-height:1.5;}
-.onesignal-box .os-step{display:flex;gap:10px;margin-top:10px;font-size:13px;color:var(--text2);align-items:flex-start;}
-.onesignal-box .os-num{background:var(--accent);color:#0d1117;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
+
 
 #install-banner{display:none;background:linear-gradient(135deg,rgba(88,166,255,0.15),rgba(63,185,80,0.1));border:1px solid rgba(88,166,255,0.3);border-radius:14px;padding:14px 16px;margin-bottom:12px;align-items:center;gap:12px;}
 #install-banner.show{display:flex;}
@@ -451,7 +412,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">🔔 Ny påminnelse</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">Påminnelserna skickas via OneSignal när du har konfigurerat det. Du kan fortfarande spara tider nu.</p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">Påminnelserna skickas via ntfy till din telefon vid angiven tid.</p>
     <div class="field"><label>Tid</label><input type="time" id="reminder-time-input"></div>
     <div class="field"><label>Etikett</label><input type="text" id="reminder-label-input" placeholder="T.ex. Frukost, Lunch..."></div>
     <button class="btn btn-primary" onclick="saveReminder()" style="margin-bottom:8px;">✓ Spara</button>
@@ -992,7 +953,6 @@ function renderSettings(){
   const g=getGoals();
   document.getElementById('goal-kcal').value=g.kcal;document.getElementById('goal-prot').value=g.prot;
   document.getElementById('goal-carb').value=g.carb;document.getElementById('goal-fat').value=g.fat;
-  const configured=ONESIGNAL_APP_ID!=="KLISTRA-IN-DITT-APP-ID-HÄR";
   // Load ntfy channel if saved
   const ch=getNtfyChannel();
   const inp=document.getElementById('ntfy-channel-input');
