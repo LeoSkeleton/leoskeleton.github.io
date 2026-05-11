@@ -893,21 +893,34 @@ function saveNtfyChannel(){
   else{status.textContent='';} 
 }
 async function sendNtfy(title, body){
-  const channel=getNtfyChannel();
-  if(!channel)return;
+  const channel=getNtfyChannel().trim();
+  if(!channel){console.log('ntfy: no channel');return;}
+  const url='https://ntfy.sh/'+channel;
+  console.log('ntfy sending to:',url,'title:',title,'body:',body);
   try{
-    await fetch('https://ntfy.sh/'+channel,{
+    const res=await fetch(url,{
       method:'POST',
-      headers:{'Title':title,'Priority':'default','Tags':'fork_and_knife'},
+      headers:{
+        'Content-Type':'text/plain;charset=utf-8',
+        'X-Title':'Makro - Dags att logga!',
+        'X-Priority':'default',
+        'X-Tags':'fork_and_knife'
+      },
       body:body
     });
-  }catch(e){console.log('ntfy error',e);}
+    console.log('ntfy response:',res.status,res.statusText);
+    return res;
+  }catch(e){
+    console.error('ntfy fetch error:',e);
+  }
 }
 async function testNtfy(){
-  const channel=getNtfyChannel();
+  const channel=getNtfyChannel().trim();
   if(!channel){showToast('⚠️ Ange ett kanalnamn först!');return;}
-  await sendNtfy('Makro 🥗','Testnotifikation fungerar! ✅');
-  showToast('✓ Testnotifikation skickad!');
+  showToast('Skickar...');
+  const res=await sendNtfy('Makro','Testnotifikation fungerar!');
+  if(res&&res.ok){showToast('✓ Skickad! Kolla ntfy-appen');}
+  else{showToast('⚠️ Något gick fel, kolla kanalnamnet');}
 }
 function scheduleNtfyReminders(){
   const reminders=getReminders();
@@ -918,9 +931,9 @@ function scheduleNtfyReminders(){
     if(next<=now)next.setDate(next.getDate()+1);
     const ms=next-now;
     setTimeout(async()=>{
-      await sendNtfy('Makro 🥗',r.label);
+      await sendNtfy('Makro',r.label);
       // reschedule for next day
-      setInterval(async()=>{ await sendNtfy('Makro 🥗',r.label); },24*60*60*1000);
+      setInterval(async()=>{ await sendNtfy('Makro',r.label); },24*60*60*1000);
     },ms);
   });
 }
