@@ -9,16 +9,54 @@
 <meta name="mobile-web-app-capable" content="yes">
 <title>Makro</title>
 <link rel="manifest" id="manifest-placeholder">
+
+<!-- ===================================================
+     ONESIGNAL: Klistra in ditt App ID nedan
+     Steg:
+     1. Gå till onesignal.com → skapa konto
+     2. New App → Web → Progressive Web App
+     3. Fyll i din GitHub Pages URL
+     4. Kopiera App ID och klistra in nedan
+     =================================================== -->
+<script>
+  const ONESIGNAL_APP_ID = "KLISTRA-IN-DITT-APP-ID-HÄR";
+</script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    if(ONESIGNAL_APP_ID === "KLISTRA-IN-DITT-APP-ID-HÄR") return;
+    await OneSignal.init({
+      appId: ONESIGNAL_APP_ID,
+      notifyButton: { enable: false },
+      promptOptions: {
+        slidedown: {
+          prompts: [{
+            type: "push",
+            autoPrompt: false,
+            text: {
+              actionMessage: "Vill du få påminnelser att logga dina måltider?",
+              acceptButton: "Ja tack!",
+              cancelButton: "Nej"
+            }
+          }]
+        }
+      }
+    });
+  });
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2333;--border:#30363d;--accent:#58a6ff;--green:#3fb950;--orange:#f78166;--yellow:#d29922;--purple:#bc8cff;--text:#e6edf3;--text2:#8b949e;--text3:#484f58;--radius:16px;--tab-h:64px;}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,sans-serif;min-height:100vh;overflow-x:hidden;}
 #app{display:flex;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;}
 .screen{flex:1;overflow-y:auto;padding:16px 16px calc(var(--tab-h)+16px);display:none;}
 .screen.active{display:block;}
 
 .topbar{padding:20px 16px 0;display:flex;justify-content:space-between;align-items:center;}
-.topbar-title{font-family:'Syne',system-ui,sans-serif;font-size:22px;font-weight:800;}
+.topbar-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
 .topbar-right{display:flex;gap:8px;align-items:center;}
 
 .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:var(--tab-h);background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;}
@@ -31,7 +69,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
 
 .day-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
 .macro-pill{background:var(--surface2);border-radius:12px;padding:12px;text-align:center;}
-.macro-pill .val{font-family:system-ui,sans-serif;font-size:24px;font-weight:800;}
+.macro-pill .val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;}
 .macro-pill .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
 .macro-pill.kcal .val{color:var(--accent);}
 .macro-pill.prot .val{color:var(--green);}
@@ -89,18 +127,18 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
 .recipe-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;overflow:hidden;cursor:pointer;}
 .recipe-item-img{width:100%;height:100px;object-fit:cover;display:block;}
 .recipe-item-body{padding:13px;}
-.recipe-name{font-family:system-ui,sans-serif;font-size:16px;font-weight:700;}
+.recipe-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
 
 .img-upload-area{width:100%;height:120px;background:var(--surface2);border:2px dashed var(--border);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;margin-bottom:12px;position:relative;overflow:hidden;}
 .img-upload-area .hint{font-size:13px;color:var(--text3);text-align:center;pointer-events:none;}
 .img-upload-area .hint-icon{font-size:28px;margin-bottom:5px;}
 
-.water-glasses{display:flex;gap:6px;flex-wrap:wrap;flex:1;}
+.water-glasses{display:flex;gap:6px;flex-wrap:wrap;}
 .water-glass{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all 0.15s;}
 .water-glass.filled{background:rgba(88,166,255,0.2);border-color:var(--accent);}
 
 .streak-banner{background:linear-gradient(135deg,rgba(255,160,50,0.15),rgba(255,100,30,0.1));border:1px solid rgba(255,130,40,0.25);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:12px;}
-.streak-num{font-family:system-ui,sans-serif;font-size:28px;font-weight:800;color:#ff8c32;}
+.streak-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#ff8c32;}
 
 .week-chart{display:flex;align-items:flex-end;gap:6px;height:80px;margin:8px 0;}
 .week-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
@@ -124,7 +162,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
 .modal{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:20px;max-height:93vh;overflow-y:auto;animation:slideUp 0.25s ease;}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
-.modal-title{font-family:system-ui,sans-serif;font-size:20px;font-weight:800;margin-bottom:14px;}
+.modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:14px;}
 
 .action-btn{display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface2);border-radius:14px;margin-bottom:10px;cursor:pointer;border:1px solid var(--border);transition:border-color 0.15s;}
 .action-btn:active{border-color:var(--accent);}
@@ -135,31 +173,31 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
 .detail-img{width:100%;height:200px;object-fit:cover;border-radius:16px;margin-bottom:14px;display:block;}
 .detail-macro-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin:12px 0;}
 .detail-macro{background:var(--surface2);border-radius:10px;padding:10px;text-align:center;}
-.detail-macro .dv{font-family:system-ui,sans-serif;font-size:18px;font-weight:800;}
+.detail-macro .dv{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;}
 .detail-macro .dl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
 
-/* NOTIF REMINDER LIST */
 .reminder-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surface2);border-radius:12px;margin-bottom:8px;}
 .reminder-time{font-size:16px;font-weight:600;}
 .reminder-label{font-size:12px;color:var(--text2);margin-top:2px;}
 
-.section-title{font-family:system-ui,sans-serif;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin:14px 0 9px;}
+/* OneSignal setup box */
+.onesignal-box{background:linear-gradient(135deg,rgba(88,166,255,0.1),rgba(63,185,80,0.08));border:1px solid rgba(88,166,255,0.25);border-radius:14px;padding:16px;margin-bottom:12px;}
+.onesignal-box .os-title{font-weight:600;font-size:15px;margin-bottom:6px;}
+.onesignal-box .os-sub{font-size:13px;color:var(--text2);line-height:1.5;}
+.onesignal-box .os-step{display:flex;gap:10px;margin-top:10px;font-size:13px;color:var(--text2);align-items:flex-start;}
+.onesignal-box .os-num{background:var(--accent);color:#0d1117;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
+
+#install-banner{display:none;background:linear-gradient(135deg,rgba(88,166,255,0.15),rgba(63,185,80,0.1));border:1px solid rgba(88,166,255,0.3);border-radius:14px;padding:14px 16px;margin-bottom:12px;align-items:center;gap:12px;}
+#install-banner.show{display:flex;}
+
+.section-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin:14px 0 9px;}
 .empty-state{text-align:center;padding:36px 16px;color:var(--text3);}
 .empty-state .ei{font-size:42px;margin-bottom:10px;}
 .empty-state p{font-size:14px;line-height:1.6;}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1c2333;border:1px solid var(--green);color:var(--green);padding:10px 20px;border-radius:20px;font-size:13px;z-index:400;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
 .divider{height:1px;background:var(--border);margin:12px 0;}
-
-/* INSTALL BANNER */
-#install-banner{display:none;background:linear-gradient(135deg,rgba(88,166,255,0.15),rgba(63,185,80,0.1));border:1px solid rgba(88,166,255,0.3);border-radius:14px;padding:14px 16px;margin-bottom:12px;align-items:center;gap:12px;}
-#install-banner.show{display:flex;}
-#install-banner .ib-icon{font-size:28px;}
-#install-banner .ib-text{flex:1;}
-#install-banner .ib-title{font-size:14px;font-weight:600;}
-#install-banner .ib-sub{font-size:12px;color:var(--text2);margin-top:2px;}
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
 <div id="app">
@@ -174,16 +212,15 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
     </div>
   </div><br>
 
-  <!-- Install Banner -->
   <div id="install-banner">
-    <div class="ib-icon">📱</div>
-    <div class="ib-text"><div class="ib-title">Installera som app</div><div class="ib-sub">Få notifikationer och snabbare åtkomst</div></div>
-    <button class="btn btn-sm btn-green" id="install-btn" onclick="installApp()">Installera</button>
+    <div style="font-size:28px;">📱</div>
+    <div style="flex:1;"><div style="font-size:14px;font-weight:600;">Installera som app</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Få push-notifikationer</div></div>
+    <button class="btn btn-sm btn-green" onclick="installApp()">Installera</button>
   </div>
 
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
     <button onclick="changeDay(-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 14px;font-size:18px;cursor:pointer;">‹</button>
-    <div id="current-date-display" style="flex:1;text-align:center;font-family:'Syne',system-ui;font-size:15px;font-weight:700;"></div>
+    <div id="current-date-display" style="flex:1;text-align:center;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;"></div>
     <button onclick="changeDay(1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 14px;font-size:18px;cursor:pointer;">›</button>
   </div>
 
@@ -226,7 +263,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
 <!-- SEARCH -->
 <div id="screen-search" class="screen">
   <div class="topbar"><div class="topbar-title">Sök 🔍</div></div><br>
-  <div class="search-input-wrap"><span class="search-icon">🔍</span><input type="text" id="search-input" placeholder="Sök måltider och recept..." oninput="runSearch()"></div>
+  <div class="search-input-wrap"><span class="search-icon">🔍</span><input type="text" id="search-input" placeholder="Sök måltider..." oninput="runSearch()"></div>
   <div class="cat-filter" id="search-cat-filter"></div>
   <div id="search-results"></div>
 </div>
@@ -260,12 +297,27 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
     <button class="btn btn-primary" onclick="saveGoals()">Spara mål</button>
   </div>
 
+  <!-- ONESIGNAL SETUP -->
   <div class="card">
-    <div class="section-title" style="margin-top:0;">🔔 Måltidspåminnelser</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5;">Ställ in påminnelser att logga dina måltider.</p>
-    <button class="btn btn-ghost" onclick="requestNotifPermission()" style="margin-bottom:10px;" id="notif-perm-btn">🔔 Aktivera notifikationer</button>
-    <div id="reminders-list"></div>
-    <button class="btn btn-ghost" onclick="openAddReminder()" style="margin-top:8px;">+ Ny påminnelse</button>
+    <div class="section-title" style="margin-top:0;">🔔 Push-notifikationer</div>
+    <div id="notif-status-box"></div>
+
+    <div class="onesignal-box" id="onesignal-setup-box">
+      <div class="os-title">📋 Sätt upp OneSignal</div>
+      <div class="os-sub">För att få push-notifikationer till mobilen:</div>
+      <div class="os-step"><div class="os-num">1</div><div>Gå till <strong>onesignal.com</strong> → skapa gratis konto</div></div>
+      <div class="os-step"><div class="os-num">2</div><div>New App → döp den "Makro" → Web → Progressive Web App</div></div>
+      <div class="os-step"><div class="os-num">3</div><div>Fyll i din GitHub Pages URL</div></div>
+      <div class="os-step"><div class="os-num">4</div><div>Kopiera <strong>App ID</strong> och öppna index.html → klistra in App ID längst upp i koden</div></div>
+      <div class="os-step"><div class="os-num">5</div><div>Ladda upp till GitHub → öppna appen → tryck knappen nedan</div></div>
+    </div>
+
+    <button class="btn btn-ghost" onclick="requestPushPermission()" id="notif-perm-btn" style="margin-top:10px;">🔔 Aktivera push-notifikationer</button>
+
+    <div style="margin-top:14px;">
+      <div id="reminders-list"></div>
+      <button class="btn btn-ghost" onclick="openAddReminder()" style="margin-top:8px;">+ Ny påminnelse</button>
+    </div>
   </div>
 
   <div class="card">
@@ -292,8 +344,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
 </div>
 
 <!-- MODALS -->
-
-<!-- ADD/EDIT MEAL -->
 <div class="modal-overlay" id="modal-add-meal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -319,7 +369,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
   </div>
 </div>
 
-<!-- POST LOG -->
 <div class="modal-overlay" id="modal-post-log">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -332,7 +381,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
   </div>
 </div>
 
-<!-- SAVE AS RECIPE -->
 <div class="modal-overlay" id="modal-save-as-recipe">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -352,18 +400,17 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
   </div>
 </div>
 
-<!-- MEAL DETAIL -->
 <div class="modal-overlay" id="modal-meal-detail">
   <div class="modal">
     <div class="modal-handle"></div>
     <div id="meal-detail-content"></div>
+    <button class="btn btn-green" onclick="copyMealToToday()" style="margin-bottom:8px;">📋 Kopiera till idag</button>
     <button class="btn btn-ghost" onclick="editMealFromDetail()" style="margin-bottom:8px;">✏️ Redigera macros</button>
     <button class="btn btn-danger" id="meal-detail-delete-btn" style="margin-bottom:8px;">🗑️ Ta bort</button>
     <button class="btn btn-ghost" onclick="closeModal('modal-meal-detail')">Stäng</button>
   </div>
 </div>
 
-<!-- ADD/EDIT RECIPE -->
 <div class="modal-overlay" id="modal-add-recipe">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -383,7 +430,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
   </div>
 </div>
 
-<!-- VIEW RECIPE -->
 <div class="modal-overlay" id="modal-view-recipe">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -395,22 +441,22 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
   </div>
 </div>
 
-<!-- COPY DAY -->
+<!-- COPY DAY - FIXED -->
 <div class="modal-overlay" id="modal-copy-day">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">📋 Kopiera dag</div>
-    <p style="font-size:14px;color:var(--text2);margin-bottom:14px;">Välj en dag att kopiera måltider ifrån.</p>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px;">Välj en dag att kopiera måltider ifrån till <strong>idag</strong>.</p>
     <div id="copy-day-list"></div>
     <button class="btn btn-ghost" onclick="closeModal('modal-copy-day')" style="margin-top:8px;">Avbryt</button>
   </div>
 </div>
 
-<!-- ADD REMINDER -->
 <div class="modal-overlay" id="modal-add-reminder">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">🔔 Ny påminnelse</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">Påminnelserna skickas via OneSignal när du har konfigurerat det. Du kan fortfarande spara tider nu.</p>
     <div class="field"><label>Tid</label><input type="time" id="reminder-time-input"></div>
     <div class="field"><label>Etikett</label><input type="text" id="reminder-label-input" placeholder="T.ex. Frukost, Lunch..."></div>
     <button class="btn btn-primary" onclick="saveReminder()" style="margin-bottom:8px;">✓ Spara</button>
@@ -425,33 +471,22 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'DM Sans',
 let currentDateOffset=0,editingRecipeId=null,viewingRecipeId=null;
 let lastLoggedMeal=null,recipeImgData=null,sarImgData=null;
 let selectedCat='frukost',viewingMealInfo=null,editingMealInfo=null;
-let deferredInstallPrompt=null;
-let searchCatFilter='all';
+let deferredInstallPrompt=null,searchCatFilter='all';
 
-// ---- PWA MANIFEST (inline) ----
-const manifestData={name:'Makro',short_name:'Makro',description:'Macro tracker',start_url:'.',display:'standalone',background_color:'#0d1117',theme_color:'#0d1117',orientation:'portrait',icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%230d1117"/><text y="68" x="15" font-size="65">🥗</text></svg>',sizes:'192x192',type:'image/svg+xml'},{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%230d1117"/><text y="68" x="15" font-size="65">🥗</text></svg>',sizes:'512x512',type:'image/svg+xml'}]};
-const manifestBlob=new Blob([JSON.stringify(manifestData)],{type:'application/json'});
-const manifestUrl=URL.createObjectURL(manifestBlob);
-document.getElementById('manifest-placeholder').href=manifestUrl;
+// ---- PWA MANIFEST ----
+const manifestData={name:'Makro',short_name:'Makro',description:'Din personliga macro-tracker',start_url:'.',display:'standalone',background_color:'#0d1117',theme_color:'#0d1117',orientation:'portrait-primary',icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230d1117'/%3E%3Ctext y='75' x='10' font-size='70'%3E%F0%9F%A5%97%3C/text%3E%3C/svg%3E",sizes:'192x192',type:'image/svg+xml'},{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230d1117'/%3E%3Ctext y='75' x='10' font-size='70'%3E%F0%9F%A5%97%3C/text%3E%3C/svg%3E",sizes:'512x512',type:'image/svg+xml'}]};
+const mBlob=new Blob([JSON.stringify(manifestData)],{type:'application/json'});
+document.getElementById('manifest-placeholder').href=URL.createObjectURL(mBlob);
 
 // ---- SERVICE WORKER ----
 if('serviceWorker' in navigator){
-  const swCode=`
-self.addEventListener('install',e=>self.skipWaiting());
-self.addEventListener('activate',e=>e.waitUntil(clients.claim()));
-self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response('Offline',{status:503}))));
-self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(clients.openWindow('/'));});
-`;
-  const swBlob=new Blob([swCode],{type:'application/javascript'});
-  const swUrl=URL.createObjectURL(swBlob);
-  navigator.serviceWorker.register(swUrl).catch(()=>{});
+  const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response('Offline',{status:503}))));`;
+  const swBlob=new Blob([sw],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
 }
 
-// ---- INSTALL PROMPT ----
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault(); deferredInstallPrompt=e;
-  document.getElementById('install-banner').classList.add('show');
-});
+// ---- INSTALL ----
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById('install-banner').classList.add('show');});
 window.addEventListener('appinstalled',()=>{document.getElementById('install-banner').classList.remove('show');showToast('✓ App installerad!');});
 function installApp(){if(deferredInstallPrompt){deferredInstallPrompt.prompt();deferredInstallPrompt.userChoice.then(()=>{deferredInstallPrompt=null;});}}
 
@@ -501,6 +536,7 @@ function renderHome(){
   const sp=(id,val,max)=>{const p=Math.min(100,Math.round((val/max)*100));document.getElementById('prog-'+id).style.width=p+'%';document.getElementById('prog-'+id+'-val').textContent=p+'%';};
   sp('kcal',tot.kcal,goals.kcal);sp('prot',tot.prot,goals.prot);sp('carb',tot.carb,goals.carb);sp('fat',tot.fat,goals.fat);
   renderWater(dk);renderStreak();renderQuickScroll();
+
   const list=document.getElementById('meals-list');
   if(!meals.length){list.innerHTML=`<div class="empty-state"><div class="ei">🍽️</div><p>Inga måltider loggade ännu.</p></div>`;return;}
   const cats=['frukost','lunch','middag','snack','övrigt'];
@@ -510,38 +546,35 @@ function renderHome(){
     const cm=meals.map((m,i)=>({...m,_i:i})).filter(m=>(m.cat||'övrigt')===cat);
     if(!cm.length)return;
     html+=`<div class="section-title" style="margin-top:8px;">${ce[cat]} ${cat.charAt(0).toUpperCase()+cat.slice(1)}</div>`;
-    cm.forEach(m=>{
-      html+=`<div class="meal-item" onclick="viewMealDetail('${dk}',${m._i})">
-        ${m.image?`<img class="meal-item-img" src="${m.image}" alt="${m.name}">`:''}
-        <div class="meal-item-body">
-          <div class="meal-item-top">
-            <div><div class="meal-name">${m.name}</div><div class="meal-time">${m.time||''}</div></div>
-            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteMeal('${dk}',${m._i})">✕</button>
-          </div>
-          ${m.notes?`<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic;">${m.notes}</div>`:''}
-          <div class="meal-macros">
-            <span class="meal-tag kcal">${m.kcal} kcal</span>
-            <span class="meal-tag prot">${m.prot}g P</span>
-            <span class="meal-tag carb">${m.carb}g C</span>
-            <span class="meal-tag fat">${m.fat}g F</span>
-          </div>
+    cm.forEach(m=>{html+=`<div class="meal-item" onclick="viewMealDetail('${dk}',${m._i})">
+      ${m.image?`<img class="meal-item-img" src="${m.image}" alt="${m.name}">`:''}
+      <div class="meal-item-body">
+        <div class="meal-item-top">
+          <div><div class="meal-name">${m.name}</div><div class="meal-time">${m.time||''}</div></div>
+          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteMeal('${dk}',${m._i})">✕</button>
         </div>
-      </div>`;
-    });
+        ${m.notes?`<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic;">${m.notes}</div>`:''}
+        <div class="meal-macros">
+          <span class="meal-tag kcal">${m.kcal} kcal</span>
+          <span class="meal-tag prot">${m.prot}g P</span>
+          <span class="meal-tag carb">${m.carb}g C</span>
+          <span class="meal-tag fat">${m.fat}g F</span>
+        </div>
+      </div>
+    </div>`;});
   });
   list.innerHTML=html;
 }
 
 function renderStreak(){
   const data=getData();let s=0,o=0;
-  while(true){const k=getDateKey(o);if((data[k]||[]).length>0){s++;o--;}else break;if(Math.abs(o)>365)break;}
+  while(Math.abs(o)<=365){const k=getDateKey(o);if((data[k]||[]).length>0){s++;o--;}else break;}
   const el=document.getElementById('streak-badge');
   if(s>=2){el.textContent=`🔥 ${s} dagar`;el.style.display='block';}else el.style.display='none';
 }
 
 function renderWater(dk){
-  const c=getWater(dk);
-  document.getElementById('water-count').textContent=`${c} / 8 glas`;
+  const c=getWater(dk);document.getElementById('water-count').textContent=`${c} / 8 glas`;
   let h='';for(let i=1;i<=8;i++)h+=`<div class="water-glass ${i<=c?'filled':''}" onclick="toggleWater('${dk}',${i})">💧</div>`;
   document.getElementById('water-glasses').innerHTML=h;
 }
@@ -602,7 +635,17 @@ function viewMealDetail(dk,idx){
   document.getElementById('modal-meal-detail').classList.add('open');
 }
 
-// ---- EDIT LOGGED MEAL ----
+function copyMealToToday(){
+  if(!viewingMealInfo)return;
+  const m=getData()[viewingMealInfo.dateKey][viewingMealInfo.idx];if(!m)return;
+  const todayKey=getDateKey(0),data=getData();
+  if(!data[todayKey])data[todayKey]=[];
+  data[todayKey].push({...m,time:formatTime()});
+  saveData(data);closeModal('modal-meal-detail');
+  currentDateOffset=0;renderHome();
+  showToast('✓ '+m.name+' kopierad till idag!');
+}
+
 function editMealFromDetail(){
   if(!viewingMealInfo)return;
   const{dateKey,idx}=viewingMealInfo;
@@ -617,19 +660,13 @@ function editMealFromDetail(){
   document.getElementById('meal-carb-input').value=m.carb;
   document.getElementById('meal-fat-input').value=m.fat;
   document.getElementById('meal-notes-input').value=m.notes||'';
-  // set category
   selectedCat=m.cat||'frukost';
-  document.querySelectorAll('#cat-selector .cat-chip').forEach(c=>{
-    c.classList.toggle('active',c.textContent.toLowerCase().includes(selectedCat));
-  });
+  document.querySelectorAll('#cat-selector .cat-chip').forEach(c=>{c.classList.toggle('active',c.textContent.toLowerCase().includes(selectedCat));});
   setTimeout(()=>document.getElementById('modal-add-meal').classList.add('open'),250);
 }
 
-// ---- ADD MEAL ----
-function selectCat(el,cat){
-  document.querySelectorAll('#cat-selector .cat-chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');selectedCat=cat;
-}
+// ---- ADD/EDIT MEAL ----
+function selectCat(el,cat){document.querySelectorAll('#cat-selector .cat-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');selectedCat=cat;}
 
 function openAddMeal(){
   editingMealInfo=null;
@@ -640,29 +677,22 @@ function openAddMeal(){
 }
 
 function saveMeal(){
-  const name=document.getElementById('meal-name-input').value.trim();
-  if(!name){alert('Ange ett namn');return;}
-  const meal={name,time:formatTime(),
+  const name=document.getElementById('meal-name-input').value.trim();if(!name){alert('Ange ett namn');return;}
+  const vals={name,time:formatTime(),
     kcal:parseFloat(document.getElementById('meal-kcal-input').value)||0,
     prot:parseFloat(document.getElementById('meal-prot-input').value)||0,
     carb:parseFloat(document.getElementById('meal-carb-input').value)||0,
     fat:parseFloat(document.getElementById('meal-fat-input').value)||0,
-    notes:document.getElementById('meal-notes-input').value.trim(),
-    cat:selectedCat};
-
+    notes:document.getElementById('meal-notes-input').value.trim(),cat:selectedCat};
   if(editingMealInfo){
-    // UPDATE existing
-    const data=getData();
-    const existing=data[editingMealInfo.dateKey][editingMealInfo.idx];
-    data[editingMealInfo.dateKey][editingMealInfo.idx]={...existing,...meal,image:existing.image||null};
-    saveData(data);closeModal('modal-add-meal');renderHome();
-    editingMealInfo=null;showToast('✓ Måltid uppdaterad!');
-  } else {
-    // NEW
-    meal.image=null;
+    const data=getData(),existing=data[editingMealInfo.dateKey][editingMealInfo.idx];
+    data[editingMealInfo.dateKey][editingMealInfo.idx]={...existing,...vals,image:existing.image||null};
+    saveData(data);closeModal('modal-add-meal');renderHome();editingMealInfo=null;showToast('✓ Måltid uppdaterad!');
+  }else{
+    vals.image=null;
     const dk=getDateKey(currentDateOffset),data=getData();
     if(!data[dk])data[dk]=[];
-    data[dk].push(meal);saveData(data);
+    data[dk].push(vals);saveData(data);
     lastLoggedMeal={dateKey:dk,idx:data[dk].length-1};
     closeModal('modal-add-meal');renderHome();
     setTimeout(()=>document.getElementById('modal-post-log').classList.add('open'),250);
@@ -674,68 +704,70 @@ function postLogSaveRecipe(){
   closeModal('modal-post-log');if(!lastLoggedMeal)return;
   const m=getData()[lastLoggedMeal.dateKey][lastLoggedMeal.idx];
   document.getElementById('sar-name').value=m.name;
-  document.getElementById('sar-kcal').value=m.kcal;
-  document.getElementById('sar-prot').value=m.prot;
-  document.getElementById('sar-carb').value=m.carb;
-  document.getElementById('sar-fat').value=m.fat;
-  document.getElementById('sar-notes').value=m.notes||'';
-  document.getElementById('sar-ingredients').value='';
-  sarImgData=m.image||null;
-  setImgPreview('sar-img-area',sarImgData,'sar-img-input','handleSarImg');
+  document.getElementById('sar-kcal').value=m.kcal;document.getElementById('sar-prot').value=m.prot;
+  document.getElementById('sar-carb').value=m.carb;document.getElementById('sar-fat').value=m.fat;
+  document.getElementById('sar-notes').value=m.notes||'';document.getElementById('sar-ingredients').value='';
+  sarImgData=m.image||null;setImgPreview('sar-img-area',sarImgData,'sar-img-input','handleSarImg');
   setTimeout(()=>document.getElementById('modal-save-as-recipe').classList.add('open'),250);
 }
 function triggerPostLogImg(){document.getElementById('post-log-img-input').click();}
 function handlePostLogImage(e){
   const file=e.target.files[0];if(!file||!lastLoggedMeal)return;
   const reader=new FileReader();
-  reader.onload=ev=>{
-    const data=getData(),{dateKey,idx}=lastLoggedMeal;
-    if(data[dateKey]&&data[dateKey][idx]){data[dateKey][idx].image=ev.target.result;saveData(data);renderHome();showToast('✓ Bild sparad!');}
-  };
+  reader.onload=ev=>{const data=getData(),{dateKey,idx}=lastLoggedMeal;if(data[dateKey]&&data[dateKey][idx]){data[dateKey][idx].image=ev.target.result;saveData(data);renderHome();showToast('✓ Bild sparad!');}};
   reader.readAsDataURL(file);closeModal('modal-post-log');
 }
-function handleSarImg(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{sarImgData=ev.target.result;setImgPreview('sar-img-area',ev.target.result,'sar-img-input','handleSarImg');};
-  reader.readAsDataURL(file);
-}
+function handleSarImg(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{sarImgData=ev.target.result;setImgPreview('sar-img-area',ev.target.result,'sar-img-input','handleSarImg');};reader.readAsDataURL(file);}
 function confirmSaveAsRecipe(){
   const name=document.getElementById('sar-name').value.trim();if(!name){alert('Ange ett namn');return;}
   const recipes=getRecipes();
-  recipes.unshift({id:Date.now().toString(),name,
-    kcal:parseFloat(document.getElementById('sar-kcal').value)||0,
-    prot:parseFloat(document.getElementById('sar-prot').value)||0,
-    carb:parseFloat(document.getElementById('sar-carb').value)||0,
-    fat:parseFloat(document.getElementById('sar-fat').value)||0,
-    ingredients:document.getElementById('sar-ingredients').value.trim(),
-    notes:document.getElementById('sar-notes').value.trim(),
-    image:sarImgData||null,savedAt:new Date().toISOString()});
+  recipes.unshift({id:Date.now().toString(),name,kcal:parseFloat(document.getElementById('sar-kcal').value)||0,prot:parseFloat(document.getElementById('sar-prot').value)||0,carb:parseFloat(document.getElementById('sar-carb').value)||0,fat:parseFloat(document.getElementById('sar-fat').value)||0,ingredients:document.getElementById('sar-ingredients').value.trim(),notes:document.getElementById('sar-notes').value.trim(),image:sarImgData||null,savedAt:new Date().toISOString()});
   saveRecipes(recipes);closeModal('modal-save-as-recipe');renderHome();showToast('✓ Recept sparat!');
 }
 
-// ---- COPY DAY ----
+// ---- COPY DAY (FIXED) ----
 function openCopyDay(){
   const data=getData();
-  const keys=Object.keys(data).filter(k=>k!==getDateKey(0)&&(data[k]||[]).length>0).sort((a,b)=>b.localeCompare(a)).slice(0,14);
+  const todayKey=getDateKey(0);
+  // Get all days with meals, excluding today, sorted newest first
+  const keys=Object.keys(data)
+    .filter(k=>k!==todayKey && Array.isArray(data[k]) && data[k].length>0)
+    .sort((a,b)=>b.localeCompare(a))
+    .slice(0,14);
+
   if(!keys.length){showToast('Ingen historik att kopiera');return;}
+
   document.getElementById('copy-day-list').innerHTML=keys.map(key=>{
-    const meals=data[key]||[],tot=meals.reduce((a,m)=>({kcal:a.kcal+(m.kcal||0),prot:a.prot+(m.prot||0)}),{kcal:0,prot:0});
-    const label=key===getDateKey(-1)?'Igår':key;
+    const meals=data[key];
+    const tot=meals.reduce((acc,m)=>({kcal:acc.kcal+(m.kcal||0),prot:acc.prot+(m.prot||0)}),{kcal:0,prot:0});
+    const d=new Date(key+'T12:00:00');
+    const label=key===getDateKey(-1)?'Igår':d.toLocaleDateString('sv-SE',{weekday:'long',month:'short',day:'numeric'});
     return `<div class="card-sm" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="confirmCopyDay('${key}')">
-      <div><div style="font-weight:500;font-size:14px;">${label}</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">${meals.length} måltider · ${Math.round(tot.kcal)} kcal · ${Math.round(tot.prot)}g P</div></div>
-      <span style="color:var(--accent);font-size:20px;">→</span>
+      <div>
+        <div style="font-weight:500;font-size:14px;">${label}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${meals.length} måltider · ${Math.round(tot.kcal)} kcal · ${Math.round(tot.prot)}g P</div>
+      </div>
+      <span style="color:var(--accent);font-size:20px;padding-left:12px;">→</span>
     </div>`;
   }).join('');
+
   document.getElementById('modal-copy-day').classList.add('open');
 }
+
 function confirmCopyDay(fromKey){
-  const data=getData(),todayKey=getDateKey(0);
-  const meals=(data[fromKey]||[]).map(m=>({...m,time:formatTime()}));
+  const data=getData();
+  const todayKey=getDateKey(0);
+  const sourceMeals=data[fromKey];
+  if(!sourceMeals||!sourceMeals.length){showToast('Inga måltider att kopiera');closeModal('modal-copy-day');return;}
   if(!data[todayKey])data[todayKey]=[];
-  data[todayKey].push(...meals);
-  saveData(data);closeModal('modal-copy-day');renderHome();
-  showToast(`✓ ${meals.length} måltider kopierade!`);
+  // Deep copy each meal and update time
+  const copies=sourceMeals.map(m=>({...m,time:formatTime()}));
+  data[todayKey].push(...copies);
+  saveData(data);
+  closeModal('modal-copy-day');
+  currentDateOffset=0;
+  renderHome();
+  showToast(`✓ ${copies.length} måltider kopierade till idag!`);
 }
 
 // ---- RECIPES ----
@@ -753,10 +785,8 @@ function renderRecipes(filter=''){
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-          <span class="meal-tag kcal">${r.kcal} kcal</span>
-          <span class="meal-tag prot">${r.prot}g P</span>
-          <span class="meal-tag carb">${r.carb}g C</span>
-          <span class="meal-tag fat">${r.fat}g F</span>
+          <span class="meal-tag kcal">${r.kcal} kcal</span><span class="meal-tag prot">${r.prot}g P</span>
+          <span class="meal-tag carb">${r.carb}g C</span><span class="meal-tag fat">${r.fat}g F</span>
         </div>
         ${r.notes?`<div style="font-size:12px;color:var(--text2);margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${r.notes}</div>`:''}
       </div>
@@ -770,27 +800,14 @@ function openAddRecipe(){
   setImgPreview('recipe-img-area',null,'recipe-img-input','handleRecipeImg');
   document.getElementById('modal-add-recipe').classList.add('open');
 }
-function handleRecipeImg(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{recipeImgData=ev.target.result;setImgPreview('recipe-img-area',ev.target.result,'recipe-img-input','handleRecipeImg');};
-  reader.readAsDataURL(file);
-}
+function handleRecipeImg(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{recipeImgData=ev.target.result;setImgPreview('recipe-img-area',ev.target.result,'recipe-img-input','handleRecipeImg');};reader.readAsDataURL(file);}
 function saveRecipe(){
   const name=document.getElementById('recipe-name-input').value.trim();if(!name){alert('Ange ett namn');return;}
   const existing=editingRecipeId?(getRecipes().find(r=>r.id===editingRecipeId)||{}):{};
-  const recipe={id:editingRecipeId||Date.now().toString(),name,
-    kcal:parseFloat(document.getElementById('recipe-kcal-input').value)||0,
-    prot:parseFloat(document.getElementById('recipe-prot-input').value)||0,
-    carb:parseFloat(document.getElementById('recipe-carb-input').value)||0,
-    fat:parseFloat(document.getElementById('recipe-fat-input').value)||0,
-    ingredients:document.getElementById('recipe-ingredients-input').value.trim(),
-    notes:document.getElementById('recipe-notes-input').value.trim(),
-    image:recipeImgData||existing.image||null,savedAt:new Date().toISOString()};
+  const recipe={id:editingRecipeId||Date.now().toString(),name,kcal:parseFloat(document.getElementById('recipe-kcal-input').value)||0,prot:parseFloat(document.getElementById('recipe-prot-input').value)||0,carb:parseFloat(document.getElementById('recipe-carb-input').value)||0,fat:parseFloat(document.getElementById('recipe-fat-input').value)||0,ingredients:document.getElementById('recipe-ingredients-input').value.trim(),notes:document.getElementById('recipe-notes-input').value.trim(),image:recipeImgData||existing.image||null,savedAt:new Date().toISOString()};
   let recipes=getRecipes();
   if(editingRecipeId)recipes=recipes.map(r=>r.id===editingRecipeId?recipe:r);else recipes.unshift(recipe);
-  saveRecipes(recipes);closeModal('modal-add-recipe');closeModal('modal-view-recipe');
-  renderRecipes();renderHome();showToast('✓ Recept sparat!');
+  saveRecipes(recipes);closeModal('modal-add-recipe');closeModal('modal-view-recipe');renderRecipes();renderHome();showToast('✓ Recept sparat!');
 }
 function viewRecipe(id){
   viewingRecipeId=id;const r=getRecipes().find(r=>r.id===id);if(!r)return;
@@ -816,12 +833,9 @@ function editCurrentRecipe(){
   const r=getRecipes().find(r=>r.id===viewingRecipeId);if(!r)return;
   editingRecipeId=r.id;recipeImgData=null;
   document.getElementById('recipe-modal-title').textContent='Redigera recept';
-  document.getElementById('recipe-name-input').value=r.name;
-  document.getElementById('recipe-kcal-input').value=r.kcal;
-  document.getElementById('recipe-prot-input').value=r.prot;
-  document.getElementById('recipe-carb-input').value=r.carb;
-  document.getElementById('recipe-fat-input').value=r.fat;
-  document.getElementById('recipe-ingredients-input').value=r.ingredients||'';
+  document.getElementById('recipe-name-input').value=r.name;document.getElementById('recipe-kcal-input').value=r.kcal;
+  document.getElementById('recipe-prot-input').value=r.prot;document.getElementById('recipe-carb-input').value=r.carb;
+  document.getElementById('recipe-fat-input').value=r.fat;document.getElementById('recipe-ingredients-input').value=r.ingredients||'';
   document.getElementById('recipe-notes-input').value=r.notes||'';
   setImgPreview('recipe-img-area',r.image||null,'recipe-img-input','handleRecipeImg');
   closeModal('modal-view-recipe');document.getElementById('modal-add-recipe').classList.add('open');
@@ -868,7 +882,7 @@ function runSearch(){
 function renderStats(){
   const data=getData(),goals=getGoals();
   let streak=0,o=0;
-  while(true){const k=getDateKey(o);if((data[k]||[]).length>0){streak++;o--;}else break;if(Math.abs(o)>365)break;}
+  while(Math.abs(o)<=365){const k=getDateKey(o);if((data[k]||[]).length>0){streak++;o--;}else break;}
   let totals=[];
   for(let i=-6;i<=0;i++){
     const key=getDateKey(i),meals=data[key]||[];
@@ -879,10 +893,7 @@ function renderStats(){
   }
   const maxKcal=Math.max(...totals.map(t=>t.kcal),goals.kcal);
   const maxProt=Math.max(...totals.map(t=>t.prot),goals.prot);
-  const avgKcal=Math.round(totals.reduce((a,t)=>a+t.kcal,0)/7);
-  const avgProt=Math.round(totals.reduce((a,t)=>a+t.prot,0)/7);
-  const avgCarb=Math.round(totals.reduce((a,t)=>a+t.carb,0)/7);
-  const avgFat=Math.round(totals.reduce((a,t)=>a+t.fat,0)/7);
+  const avg=(key)=>Math.round(totals.reduce((a,t)=>a+t[key],0)/7);
 
   document.getElementById('stats-content').innerHTML=`
     ${streak>=1?`<div class="streak-banner"><div style="font-size:32px;">🔥</div><div><div class="streak-num">${streak}</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">dagars streak</div></div></div>`:''}
@@ -895,10 +906,10 @@ function renderStats(){
     <div class="card">
       <div class="section-title" style="margin-top:0;">7-dagars snitt</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="macro-pill kcal"><div class="val">${avgKcal}</div><div class="lbl">kcal/dag</div></div>
-        <div class="macro-pill prot"><div class="val">${avgProt}g</div><div class="lbl">Protein</div></div>
-        <div class="macro-pill carb"><div class="val">${avgCarb}g</div><div class="lbl">Carbs</div></div>
-        <div class="macro-pill fat"><div class="val">${avgFat}g</div><div class="lbl">Fett</div></div>
+        <div class="macro-pill kcal"><div class="val">${avg('kcal')}</div><div class="lbl">kcal/dag</div></div>
+        <div class="macro-pill prot"><div class="val">${avg('prot')}g</div><div class="lbl">Protein</div></div>
+        <div class="macro-pill carb"><div class="val">${avg('carb')}g</div><div class="lbl">Carbs</div></div>
+        <div class="macro-pill fat"><div class="val">${avg('fat')}g</div><div class="lbl">Fett</div></div>
       </div>
     </div>`;
 
@@ -916,14 +927,19 @@ function renderStats(){
   },100);
 }
 
-// ---- NOTIFICATIONS ----
-async function requestNotifPermission(){
-  if(!('Notification' in window)){showToast('Notifikationer stöds ej i denna webbläsare');return;}
-  const perm=await Notification.requestPermission();
-  if(perm==='granted'){showToast('✓ Notifikationer aktiverade!');document.getElementById('notif-perm-btn').textContent='✅ Notifikationer aktiva';}
-  else showToast('Notifikationer nekades');
+// ---- NOTIFICATIONS (OneSignal) ----
+async function requestPushPermission(){
+  if(ONESIGNAL_APP_ID==="KLISTRA-IN-DITT-APP-ID-HÄR"){
+    showToast('⚠️ Klistra in ditt OneSignal App ID först!');return;
+  }
+  try{
+    await OneSignal.Slidedown.promptPush();
+    showToast('✓ Push-notifikationer aktiverade!');
+    document.getElementById('notif-perm-btn').textContent='✅ Push aktiverat';
+  }catch(e){showToast('Kunde inte aktivera notifikationer');}
 }
 
+// ---- REMINDERS ----
 function openAddReminder(){document.getElementById('modal-add-reminder').classList.add('open');}
 function saveReminder(){
   const time=document.getElementById('reminder-time-input').value;
@@ -931,9 +947,7 @@ function saveReminder(){
   if(!time){alert('Välj en tid');return;}
   const reminders=getReminders();
   reminders.push({id:Date.now().toString(),time,label});
-  saveReminders(reminders);
-  closeModal('modal-add-reminder');renderRemindersList();
-  scheduleReminders();showToast('✓ Påminnelse sparad!');
+  saveReminders(reminders);closeModal('modal-add-reminder');renderRemindersList();showToast('✓ Påminnelse sparad!');
 }
 function renderRemindersList(){
   const reminders=getReminders();
@@ -945,40 +959,23 @@ function renderRemindersList(){
       <button class="btn btn-sm btn-danger" onclick="deleteReminder('${r.id}')">✕</button>
     </div>`).join('');
 }
-function deleteReminder(id){
-  saveReminders(getReminders().filter(r=>r.id!==id));
-  renderRemindersList();showToast('Påminnelse borttagen');
-}
-function scheduleReminders(){
-  if(Notification.permission!=='granted')return;
-  const reminders=getReminders();
-  reminders.forEach(r=>{
-    const[h,m]=r.time.split(':').map(Number);
-    const now=new Date(),next=new Date();
-    next.setHours(h,m,0,0);
-    if(next<=now)next.setDate(next.getDate()+1);
-    const ms=next-now;
-    setTimeout(()=>{
-      new Notification('Makro 🥗',{body:r.label,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">🥗</text></svg>'});
-    },ms);
-  });
-}
+function deleteReminder(id){saveReminders(getReminders().filter(r=>r.id!==id));renderRemindersList();showToast('Påminnelse borttagen');}
 
 // ---- SETTINGS ----
 function renderSettings(){
   const g=getGoals();
-  document.getElementById('goal-kcal').value=g.kcal;
-  document.getElementById('goal-prot').value=g.prot;
-  document.getElementById('goal-carb').value=g.carb;
-  document.getElementById('goal-fat').value=g.fat;
-  if(Notification.permission==='granted')document.getElementById('notif-perm-btn').textContent='✅ Notifikationer aktiva';
+  document.getElementById('goal-kcal').value=g.kcal;document.getElementById('goal-prot').value=g.prot;
+  document.getElementById('goal-carb').value=g.carb;document.getElementById('goal-fat').value=g.fat;
+  const configured=ONESIGNAL_APP_ID!=="KLISTRA-IN-DITT-APP-ID-HÄR";
+  document.getElementById('onesignal-setup-box').style.display=configured?'none':'block';
+  document.getElementById('notif-perm-btn').textContent=configured?'🔔 Aktivera push-notifikationer':'⚠️ Konfigurera OneSignal först';
 }
 function saveGoals(){
   saveGoalsData({kcal:parseFloat(document.getElementById('goal-kcal').value)||2000,prot:parseFloat(document.getElementById('goal-prot').value)||150,carb:parseFloat(document.getElementById('goal-carb').value)||200,fat:parseFloat(document.getElementById('goal-fat').value)||65});
   showToast('✓ Mål sparade!');renderHome();
 }
 
-// ---- EXPORT / IMPORT ----
+// ---- EXPORT/IMPORT ----
 function exportData(){
   const payload={data:getData(),recipes:getRecipes(),goals:getGoals(),water:JSON.parse(localStorage.getItem('makro_water')||'{}'),reminders:getReminders(),exported:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
@@ -990,8 +987,7 @@ function importData(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=ev=>{
-    try{
-      const p=JSON.parse(ev.target.result);
+    try{const p=JSON.parse(ev.target.result);
       if(p.data)saveData(p.data);if(p.recipes)saveRecipes(p.recipes);
       if(p.goals)saveGoalsData(p.goals);
       if(p.water)localStorage.setItem('makro_water',JSON.stringify(p.water));
@@ -1021,9 +1017,7 @@ document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('cl
 // ---- TOAST ----
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 
-// ---- INIT ----
 renderHome();
-scheduleReminders();
 </script>
 </body>
 </html>
