@@ -25,7 +25,7 @@
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
-    if(ONESIGNAL_APP_ID === "ed92e042-fdd1-4155-b8de-e271d574c3b6") return;
+    if(ONESIGNAL_APP_ID === "KLISTRA-IN-DITT-APP-ID-HÄR") return;
     await OneSignal.init({
       appId: ONESIGNAL_APP_ID,
       notifyButton: { enable: false },
@@ -933,10 +933,23 @@ async function requestPushPermission(){
     showToast('⚠️ Klistra in ditt OneSignal App ID först!');return;
   }
   try{
-    await OneSignal.Slidedown.promptPush();
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){
+      showToast('Notifikationer nekades i Chrome');return;
+    }
+    if(window.OneSignal){
+      try{ await window.OneSignal.User.PushSubscription.optIn(); }
+      catch(e1){
+        try{ await window.OneSignal.setSubscription(true); }
+        catch(e2){ console.log('OneSignal fallback failed',e2); }
+      }
+    }
     showToast('✓ Push-notifikationer aktiverade!');
     document.getElementById('notif-perm-btn').textContent='✅ Push aktiverat';
-  }catch(e){showToast('Kunde inte aktivera notifikationer');}
+  }catch(e){
+    showToast('Fel: '+e.message);
+    console.error(e);
+  }
 }
 
 // ---- REMINDERS ----
