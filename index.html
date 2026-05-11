@@ -297,27 +297,22 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
     <button class="btn btn-primary" onclick="saveGoals()">Spara mål</button>
   </div>
 
-  <!-- ONESIGNAL SETUP -->
+  <!-- NTFY NOTIFICATIONS -->
   <div class="card">
     <div class="section-title" style="margin-top:0;">🔔 Push-notifikationer</div>
-    <div id="notif-status-box"></div>
 
-    <div class="onesignal-box" id="onesignal-setup-box">
-      <div class="os-title">📋 Sätt upp OneSignal</div>
-      <div class="os-sub">För att få push-notifikationer till mobilen:</div>
-      <div class="os-step"><div class="os-num">1</div><div>Gå till <strong>onesignal.com</strong> → skapa gratis konto</div></div>
-      <div class="os-step"><div class="os-num">2</div><div>New App → döp den "Makro" → Web → Progressive Web App</div></div>
-      <div class="os-step"><div class="os-num">3</div><div>Fyll i din GitHub Pages URL</div></div>
-      <div class="os-step"><div class="os-num">4</div><div>Kopiera <strong>App ID</strong> och öppna index.html → klistra in App ID längst upp i koden</div></div>
-      <div class="os-step"><div class="os-num">5</div><div>Ladda upp till GitHub → öppna appen → tryck knappen nedan</div></div>
+    <div style="background:linear-gradient(135deg,rgba(63,185,80,0.1),rgba(88,166,255,0.08));border:1px solid rgba(63,185,80,0.25);border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="font-weight:600;font-size:14px;margin-bottom:6px;">📱 Sätt upp ntfy (gratis)</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:10px;">Ladda ner <strong>ntfy</strong>-appen från Play Store. Ange sedan ett unikt kanalnamn nedan (t.ex. makro-leo-123). Appen skickar notifikationer direkt till din telefon!</div>
+      <div class="field" style="margin-bottom:8px;"><label>Ditt kanalnamn</label>
+        <input type="text" id="ntfy-channel-input" placeholder="t.ex. makro-leo-123" oninput="saveNtfyChannel()">
+      </div>
+      <div id="ntfy-status" style="font-size:12px;color:var(--text2);margin-top:4px;"></div>
+      <button class="btn btn-sm btn-green" onclick="testNtfy()" style="margin-top:8px;width:100%;">🔔 Skicka testnotifikation</button>
     </div>
 
-    <button class="btn btn-primary" onclick="requestPushPermission()" id="notif-perm-btn" style="margin-top:10px;">🔔 Aktivera push-notifikationer</button>
-
-    <div style="margin-top:14px;">
-      <div id="reminders-list"></div>
-      <button class="btn btn-ghost" onclick="openAddReminder()" style="margin-top:8px;">+ Ny påminnelse</button>
-    </div>
+    <div id="reminders-list"></div>
+    <button class="btn btn-ghost" onclick="openAddReminder()" style="margin-top:8px;">+ Ny påminnelse</button>
   </div>
 
   <div class="card">
@@ -927,29 +922,46 @@ function renderStats(){
   },100);
 }
 
-// ---- NOTIFICATIONS (OneSignal) ----
-async function requestPushPermission(){
-  if(ONESIGNAL_APP_ID==="KLISTRA-IN-DITT-APP-ID-HÄR"){
-    showToast('⚠️ Klistra in ditt OneSignal App ID först!');return;
-  }
+// ---- NTFY NOTIFICATIONS ----
+function getNtfyChannel(){return localStorage.getItem('makro_ntfy_channel')||'';}
+function saveNtfyChannel(){
+  const val=document.getElementById('ntfy-channel-input').value.trim();
+  localStorage.setItem('makro_ntfy_channel',val);
+  const status=document.getElementById('ntfy-status');
+  if(val){status.textContent='✓ Kanal sparad: ntfy.sh/'+val;status.style.color='var(--green)';}
+  else{status.textContent='';} 
+}
+async function sendNtfy(title, body){
+  const channel=getNtfyChannel();
+  if(!channel)return;
   try{
-    const perm = await Notification.requestPermission();
-    if(perm !== 'granted'){
-      showToast('Notifikationer nekades i Chrome');return;
-    }
-    if(window.OneSignal){
-      try{ await window.OneSignal.User.PushSubscription.optIn(); }
-      catch(e1){
-        try{ await window.OneSignal.setSubscription(true); }
-        catch(e2){ console.log('OneSignal fallback failed',e2); }
-      }
-    }
-    showToast('✓ Push-notifikationer aktiverade!');
-    document.getElementById('notif-perm-btn').textContent='✅ Push aktiverat';
-  }catch(e){
-    showToast('Fel: '+e.message);
-    console.error(e);
-  }
+    await fetch('https://ntfy.sh/'+channel,{
+      method:'POST',
+      headers:{'Title':title,'Priority':'default','Tags':'fork_and_knife'},
+      body:body
+    });
+  }catch(e){console.log('ntfy error',e);}
+}
+async function testNtfy(){
+  const channel=getNtfyChannel();
+  if(!channel){showToast('⚠️ Ange ett kanalnamn först!');return;}
+  await sendNtfy('Makro 🥗','Testnotifikation fungerar! ✅');
+  showToast('✓ Testnotifikation skickad!');
+}
+function scheduleNtfyReminders(){
+  const reminders=getReminders();
+  reminders.forEach(r=>{
+    const[h,m]=r.time.split(':').map(Number);
+    const now=new Date(),next=new Date();
+    next.setHours(h,m,0,0);
+    if(next<=now)next.setDate(next.getDate()+1);
+    const ms=next-now;
+    setTimeout(async()=>{
+      await sendNtfy('Makro 🥗',r.label);
+      // reschedule for next day
+      setInterval(async()=>{ await sendNtfy('Makro 🥗',r.label); },24*60*60*1000);
+    },ms);
+  });
 }
 
 // ---- REMINDERS ----
@@ -960,7 +972,8 @@ function saveReminder(){
   if(!time){alert('Välj en tid');return;}
   const reminders=getReminders();
   reminders.push({id:Date.now().toString(),time,label});
-  saveReminders(reminders);closeModal('modal-add-reminder');renderRemindersList();showToast('✓ Påminnelse sparad!');
+  saveReminders(reminders);closeModal('modal-add-reminder');renderRemindersList();
+  scheduleNtfyReminders();showToast('✓ Påminnelse sparad!');
 }
 function renderRemindersList(){
   const reminders=getReminders();
@@ -980,8 +993,10 @@ function renderSettings(){
   document.getElementById('goal-kcal').value=g.kcal;document.getElementById('goal-prot').value=g.prot;
   document.getElementById('goal-carb').value=g.carb;document.getElementById('goal-fat').value=g.fat;
   const configured=ONESIGNAL_APP_ID!=="KLISTRA-IN-DITT-APP-ID-HÄR";
-  document.getElementById('onesignal-setup-box').style.display=configured?'none':'block';
-  if(!configured) document.getElementById('notif-perm-btn').textContent='⚠️ Konfigurera OneSignal först';
+  // Load ntfy channel if saved
+  const ch=getNtfyChannel();
+  const inp=document.getElementById('ntfy-channel-input');
+  if(inp&&ch){inp.value=ch;const st=document.getElementById('ntfy-status');if(st){st.textContent='✓ Kanal sparad: ntfy.sh/'+ch;st.style.color='var(--green)';}}
 }
 function saveGoals(){
   saveGoalsData({kcal:parseFloat(document.getElementById('goal-kcal').value)||2000,prot:parseFloat(document.getElementById('goal-prot').value)||150,carb:parseFloat(document.getElementById('goal-carb').value)||200,fat:parseFloat(document.getElementById('goal-fat').value)||65});
@@ -1031,6 +1046,7 @@ document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('cl
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 
 renderHome();
+scheduleNtfyReminders();
 </script>
 </body>
 </html>
