@@ -1336,7 +1336,12 @@ function initAiScreen(){
       container.innerHTML='';
       // Re-render all messages
       saved.forEach(m=>{
-        const isRecipe=m.role==='assistant'&&(m.content.toLowerCase().includes('macros:')||m.content.toLowerCase().includes('recept'));
+        const isRecipe=m.role==='assistant'&&(
+          m.content.toLowerCase().includes('macros:')||
+          m.content.toLowerCase().includes('ingredienser')||
+          m.content.toLowerCase().includes('recept')||
+          m.content.toLowerCase().includes('kcal')
+        );
         appendAiMsg(m.role,m.content,isRecipe);
       });
       // Scroll to bottom
@@ -1425,7 +1430,7 @@ async function sendAiMessage(){
     const reply=data.content[0].text;
     chatHistory.push({role:'assistant',content:reply});
     saveChatHistory(chatHistory);
-    const isRecipe=reply.toLowerCase().includes('macros:')||reply.toLowerCase().includes('recept');
+    const isRecipe=reply.toLowerCase().includes('macros:')||reply.toLowerCase().includes('recept')||reply.toLowerCase().includes('ingredienser')||reply.toLowerCase().includes('kcal');
     appendAiMsg('assistant',reply,isRecipe);
     lastAiRecipe=reply;
     extractAndSaveMemory(chatHistory);
