@@ -1277,6 +1277,21 @@ function clearAiMemory(){
   showToast('Minne rensat');
 }
 
+// ---- PERSISTENT CHAT ----
+function saveChatHistory(history){
+  try{localStorage.setItem('makro_chat_history',JSON.stringify(history.slice(-100)));}catch(e){}
+}
+function loadChatHistory(){
+  try{return JSON.parse(localStorage.getItem('makro_chat_history')||'[]');}catch(e){return[];}
+}
+function clearChatHistory(){
+  localStorage.removeItem('makro_chat_history');
+  chatHistory=[];
+  document.getElementById('ai-chat-messages').innerHTML='';
+  initAiScreen();
+  showToast('Konversation rensad');
+}
+
 // ---- AI CHAT ----
 let chatHistory = [];
 let lastAiRecipe = null;
@@ -1312,8 +1327,23 @@ function initAiScreen(){
   document.getElementById('ai-setup-box').style.display=key?'none':'block';
   document.getElementById('change-key-btn').style.display=key?'block':'none';
   renderAiMemory();
+  // Load saved chat
   if(chatHistory.length===0){
-    appendAiMsg('assistant','Hej! Jag är din personliga kostcoach. Jag kan hjälpa dig med:\n\n• Kostfrågor och näringsinfo\n• Receptförslag baserade på dina mål\n• Analysera din dagliga logg\n• Tips för muskeluppbyggnad eller viktnedgång\n\nVad vill du veta?');
+    const saved=loadChatHistory();
+    if(saved.length>0){
+      chatHistory=saved;
+      const container=document.getElementById('ai-chat-messages');
+      container.innerHTML='';
+      // Re-render all messages
+      saved.forEach(m=>{
+        const isRecipe=m.role==='assistant'&&(m.content.toLowerCase().includes('macros:')||m.content.toLowerCase().includes('recept'));
+        appendAiMsg(m.role,m.content,isRecipe);
+      });
+      // Scroll to bottom
+      setTimeout(()=>{container.scrollTop=container.scrollHeight;},100);
+    } else {
+      appendAiMsg('assistant','Hej! Jag är din personliga kostcoach. Jag kan hjälpa dig med:\n\n• Kostfrågor och näringsinfo\n• Receptförslag baserade på dina mål\n• Analysera din dagliga logg\n• Tips för muskeluppbyggnad eller viktnedgång\n\nVad vill du veta?');
+    }
   }
 }
 
@@ -1394,10 +1424,10 @@ async function sendAiMessage(){
     if(data.error){appendAiMsg('assistant','Fel: '+data.error.message);return;}
     const reply=data.content[0].text;
     chatHistory.push({role:'assistant',content:reply});
+    saveChatHistory(chatHistory);
     const isRecipe=reply.toLowerCase().includes('macros:')||reply.toLowerCase().includes('recept');
     appendAiMsg('assistant',reply,isRecipe);
     lastAiRecipe=reply;
-    // Extract memory from conversation
     extractAndSaveMemory(chatHistory);
     renderAiMemory();
   }catch(e){
@@ -1420,33 +1450,40 @@ function askWithLog(){
   sendAiMessage();
 }
 
-function saveAiRecipe(text){
-  // Parse macros from response
-  let kcal=0,prot=0,carb=0,fat=0;
-  const macroMatch=text.match(/(\d+)\s*kcal.*?(\d+)g?\s*protein.*?(\d+)g?\s*carbs?.*?(\d+)g?\s*fett/i);
-  if(macroMatch){kcal=parseInt(macroMatch[1]);prot=parseInt(macroMatch[2]);carb=parseInt(macroMatch[3]);fat=parseInt(macroMatch[4]);}
-  // Get recipe name (first bold text or first line)
-  const nameMatch=text.match(/\*\*(.*?)\*\*/);
-  const name=nameMatch?nameMatch[1]:'AI-recept';
-  // Pre-fill recipe modal
-  document.getElementById('recipe-name-input').value=name;
-  document.getElementById('recipe-kcal-input').value=kcal;
-  document.getElementById('recipe-prot-input').value=prot;
-  document.getElementById('recipe-carb-input').value=carb;
-  document.getElementById('recipe-fat-input').value=fat;
-  document.getElementById('recipe-ingredients-input').value='';
-  document.getElementById('recipe-notes-input').value=text.replace(/<br>/g,'\n').replace(/<[^>]+>/g,'').substring(0,500);
-  setImgPreview('recipe-img-area',null,'recipe-img-input','handleRecipeImg');
-  editingRecipeId=null;recipeImgData=null;
-  document.getElementById('recipe-modal-title').textContent='Spara AI-recept';
-  document.getElementById('modal-add-recipe').classList.add('open');
-  showToast('Fyll i detaljerna och spara!');
+async function saveAiRecipe(text){
+  // Ask AI to extract structured recipe data
+  const key=getApiKey();
+  showToast('Sparar recept...');
+  let kcal=0,prot=0,carb=0,fat=0,name='AI-recept',ingredients='',notes='';
+  try{
+    // Parse macros - try multiple formats
+    const m1=text.match(/(\d+)\s*kcal[^\d]*(\d+)g?\s*[Pp](?:rotein)?[^\d]*(\d+)g?\s*[Cc][^\d]*(\d+)g?\s*[Ff]/);
+    const m2=text.match(/\*\*Macros:\*\*\s*(\d+)\s*kcal\s*\|\s*(\d+)g?\s*P\s*\|\s*(\d+)g?\s*C\s*\|\s*(\d+)g?\s*F/i);
+    const match=m2||m1;
+    if(match){kcal=parseInt(match[1]);prot=parseInt(match[2]);carb=parseInt(match[3]);fat=parseInt(match[4]);}
+    // Get name from first bold text
+    const nameMatch=text.match(/\*\*(.*?)\*\*/);
+    if(nameMatch)name=nameMatch[1].replace(/recept/i,'').trim()||'AI-recept';
+    // Clean text for ingredients/notes
+    const clean=text.replace(/<br>/g,'\n').replace(/<[^>]+>/g,'');
+    ingredients=clean.substring(0,600);
+  }catch(e){}
+
+  // Auto-save directly
+  const recipes=getRecipes();
+  recipes.unshift({
+    id:Date.now().toString(),name,kcal,prot,carb,fat,
+    ingredients,notes:'Skapat av AI-kostcoach',
+    image:null,savedAt:new Date().toISOString()
+  });
+  saveRecipes(recipes);
+  renderHome();
+  showToast('✓ '+name+' sparat som recept!');
 }
 
 function clearChat(){
-  chatHistory=[];
-  document.getElementById('ai-chat-messages').innerHTML='';
-  initAiScreen();
+  if(!confirm('Rensa hela konversationen?'))return;
+  clearChatHistory();
 }
 
 renderHome();
