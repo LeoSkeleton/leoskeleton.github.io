@@ -1106,59 +1106,73 @@ function loadSmartAlerts(){
     document.getElementById('alert-kcal-min').value=a.kcal.min||'';
   }
 }
-function scheduleSmartAlerts(){
+async function scheduleSmartAlerts(){
   const alerts=getSmartAlerts();
+  const channel=getNtfyChannel().trim();
+  if(!channel)return;
   const checks=[
-    {key:'prot', label:(min,cur)=>`Du har bara fått i dig ${cur}g protein idag. Målet är ${min}g!`, getValue:()=>{
-      const dk=getDateKey(0),meals=getData()[dk]||[];
-      return meals.reduce((a,m)=>a+(m.prot||0),0);
-    }},
-    {key:'water', label:(min,cur)=>`Du har druckit ${cur} av ${min} glas vatten idag!`, getValue:()=>{
-      return getWater(getDateKey(0));
-    }},
-    {key:'kcal', label:(min,cur)=>`Du har bara ätit ${Math.round(cur)} kcal idag. Målet är ${min} kcal!`, getValue:()=>{
-      const dk=getDateKey(0),meals=getData()[dk]||[];
-      return meals.reduce((a,m)=>a+(m.kcal||0),0);
-    }}
+    {key:'prot',getMsg:(min,cur)=>`Du har bara fatt i dig ${cur}g protein idag. Malet ar ${min}g - ata mer protein!`},
+    {key:'water',getMsg:(min,cur)=>`Du har druckit ${cur} av ${min} glas vatten idag. Kom igang!`},
+    {key:'kcal',getMsg:(min,cur)=>`Du har bara atit ${Math.round(cur)} kcal idag. Malet ar ${min} kcal!`}
   ];
-  checks.forEach(({key,label,getValue})=>{
+  for(const {key,getMsg} of checks){
     const cfg=alerts[key];
-    if(!cfg||!cfg.enabled||!cfg.time)return;
+    if(!cfg||!cfg.enabled||!cfg.time)continue;
     const[h,m]=cfg.time.split(':').map(Number);
     const now=new Date(),next=new Date();
     next.setHours(h,m,0,0);
     if(next<=now)next.setDate(next.getDate()+1);
-    const ms=next-now;
-    setTimeout(async()=>{
-      const current=getValue();
-      if(current<cfg.min){
-        await sendNtfy('Makro - '+key.charAt(0).toUpperCase()+key.slice(1)+' påminnelse', label(cfg.min,Math.round(current)));
-      }
-      // Reschedule for next day
-      setInterval(async()=>{
-        const cur=getValue();
-        if(cur<cfg.min){
-          await sendNtfy('Makro - '+key.charAt(0).toUpperCase()+key.slice(1)+' påminnelse', label(cfg.min,Math.round(cur)));
-        }
-      },24*60*60*1000);
-    },ms);
-  });
+    const atTime=Math.floor(next.getTime()/1000);
+    // Get current values to include in message
+    const dk=getDateKey(0),meals=getData()[dk]||[];
+    let cur=0;
+    if(key==='prot')cur=Math.round(meals.reduce((a,m)=>a+(m.prot||0),0));
+    if(key==='water')cur=getWater(dk);
+    if(key==='kcal')cur=Math.round(meals.reduce((a,m)=>a+(m.kcal||0),0));
+    // Only schedule if not yet at goal
+    if(cur>=cfg.min)continue;
+    try{
+      await fetch('https://ntfy.sh/'+channel,{
+        method:'POST',
+        headers:{
+          'Content-Type':'text/plain;charset=utf-8',
+          'X-Title':'Makro - Smart paminnelse',
+          'X-Priority':'high',
+          'X-Tags':'warning',
+          'X-At':String(atTime)
+        },
+        body:getMsg(cfg.min,cur)
+      });
+    }catch(e){console.log('smart alert error',e);}
+  }
 }
 
-function scheduleNtfyReminders(){
+async function scheduleNtfyReminders(){
   const reminders=getReminders();
-  reminders.forEach(r=>{
+  const channel=getNtfyChannel().trim();
+  if(!channel||!reminders.length)return;
+  for(const r of reminders){
     const[h,m]=r.time.split(':').map(Number);
     const now=new Date(),next=new Date();
     next.setHours(h,m,0,0);
     if(next<=now)next.setDate(next.getDate()+1);
-    const ms=next-now;
-    setTimeout(async()=>{
-      await sendNtfy('Makro',r.label);
-      // reschedule for next day
-      setInterval(async()=>{ await sendNtfy('Makro',r.label); },24*60*60*1000);
-    },ms);
-  });
+    // Use ntfy's at= parameter to schedule server-side
+    // ntfy servers send the notification even if app is closed
+    const atTime=Math.floor(next.getTime()/1000);
+    try{
+      await fetch('https://ntfy.sh/'+channel,{
+        method:'POST',
+        headers:{
+          'Content-Type':'text/plain;charset=utf-8',
+          'X-Title':'Makro - Dags att logga!',
+          'X-Priority':'default',
+          'X-Tags':'fork_and_knife',
+          'X-At':String(atTime)
+        },
+        body:r.label
+      });
+    }catch(e){console.log('schedule error',e);}
+  }
 }
 
 // ---- REMINDERS ----
