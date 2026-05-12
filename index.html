@@ -1314,7 +1314,8 @@ async function sendAiMessage(){
   showTyping();
   try{
     const systemPrompt='Du är en vänlig och kunnig kostcoach inbyggd i en macro-tracking app som heter Makro. Svara alltid på svenska. Håll svaren koncisa och praktiska. När du föreslår recept, inkludera alltid makros (kcal, protein, carbs, fett) i formatet: **Macros:** X kcal | Xg protein | Xg carbs | Xg fett. '+getTodayContext();
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    // Use CORS proxy to reach Anthropic API from browser
+    const res=await fetch('https://corsproxy.io/?https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
