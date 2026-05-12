@@ -151,6 +151,21 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
 #install-banner{display:none;background:linear-gradient(135deg,rgba(88,166,255,0.15),rgba(63,185,80,0.1));border:1px solid rgba(88,166,255,0.3);border-radius:14px;padding:14px 16px;margin-bottom:12px;align-items:center;gap:12px;}
 #install-banner.show{display:flex;}
 
+/* AI CHAT */
+.ai-msg{margin-bottom:14px;display:flex;flex-direction:column;}
+.ai-msg.user{align-items:flex-end;}
+.ai-msg.assistant{align-items:flex-start;}
+.ai-bubble{max-width:85%;padding:12px 14px;border-radius:16px;font-size:14px;line-height:1.6;}
+.ai-msg.user .ai-bubble{background:var(--accent);color:#0d1117;border-bottom-right-radius:4px;}
+.ai-msg.assistant .ai-bubble{background:var(--surface2);color:var(--text);border-bottom-left-radius:4px;border:1px solid var(--border);}
+.ai-bubble pre{background:var(--surface);border-radius:8px;padding:10px;margin-top:8px;font-size:12px;overflow-x:auto;white-space:pre-wrap;}
+.ai-typing{display:flex;gap:4px;padding:12px 14px;background:var(--surface2);border-radius:16px;border-bottom-left-radius:4px;width:60px;}
+.ai-typing span{width:6px;height:6px;background:var(--text2);border-radius:50%;animation:bounce 1s infinite;}
+.ai-typing span:nth-child(2){animation-delay:0.15s;}
+.ai-typing span:nth-child(3){animation-delay:0.3s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.save-recipe-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:rgba(63,185,80,0.15);border:1px solid rgba(63,185,80,0.3);color:var(--green);padding:7px 14px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;}
+
 .section-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin:14px 0 9px;}
 .empty-state{text-align:center;padding:36px 16px;color:var(--text3);}
 .empty-state .ei{font-size:42px;margin-bottom:10px;}
@@ -243,6 +258,50 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
   <div id="recipes-list"></div>
 </div>
 
+<!-- AI CHAT -->
+<div id="screen-ai" class="screen">
+  <div class="topbar">
+    <div class="topbar-title">AI Kostcoach ✨</div>
+    <button class="btn btn-sm btn-ghost" onclick="clearChat()" style="font-size:12px;">Rensa</button>
+  </div><br>
+
+  <!-- API KEY SETUP -->
+  <div id="ai-setup-box" style="background:linear-gradient(135deg,rgba(88,166,255,0.1),rgba(188,140,255,0.08));border:1px solid rgba(88,166,255,0.25);border-radius:14px;padding:16px;margin-bottom:14px;display:none;">
+    <div style="font-weight:600;font-size:14px;margin-bottom:6px;">🔑 Anthropic API-nyckel</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:10px;">Skapa gratis konto på <strong>console.anthropic.com</strong> → API Keys → skapa nyckel. Du får $5 gratis kredit!</div>
+    <div class="field" style="margin-bottom:8px;">
+      <label>API-nyckel</label>
+      <input type="password" id="ai-api-key-input" placeholder="sk-ant-...">
+    </div>
+    <button class="btn btn-primary" onclick="saveApiKey()" style="margin-bottom:0;">✓ Spara nyckel</button>
+  </div>
+
+  <!-- QUICK SUGGESTIONS -->
+  <div id="ai-suggestions" style="margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Snabbfrågor</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span class="cat-chip" onclick="quickAsk('Hur mycket protein behöver jag per dag?')">💪 Proteinbehov</span>
+      <span class="cat-chip" onclick="quickAsk('Ge mig ett recept på en proteinrik frukost')">🍳 Proteinfrukost</span>
+      <span class="cat-chip" onclick="askWithLog()">📊 Analysera min dag</span>
+      <span class="cat-chip" onclick="quickAsk('Vad är bra mat för muskeluppbyggnad?')">🏋️ Muskelmat</span>
+      <span class="cat-chip" onclick="quickAsk('Tips på enkla proteinrika snacks')">🍎 Proteinsnacks</span>
+    </div>
+  </div>
+
+  <!-- CHAT MESSAGES -->
+  <div id="ai-chat-messages" style="margin-bottom:80px;"></div>
+
+  <!-- INPUT BAR -->
+  <div style="position:fixed;bottom:var(--tab-h);left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--bg);padding:10px 16px;border-top:1px solid var(--border);z-index:50;">
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <textarea id="ai-input" placeholder="Skriv din fråga..." rows="1" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:15px;outline:none;resize:none;max-height:120px;overflow-y:auto;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMessage();}"></textarea>
+      <button onclick="sendAiMessage()" style="background:var(--accent);border:none;border-radius:12px;padding:10px 14px;cursor:pointer;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- SETTINGS -->
 <div id="screen-settings" class="screen">
   <div class="topbar"><div class="topbar-title">Inställningar ⚙️</div></div><br>
@@ -276,6 +335,75 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
     <button class="btn btn-ghost" onclick="openAddReminder()" style="margin-top:8px;">+ Ny påminnelse</button>
   </div>
 
+  <!-- SMART ALERTS -->
+  <div class="card">
+    <div class="section-title" style="margin-top:0;">🧠 Smarta påminnelser</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">Få en notifikation om du inte nått dina mål vid ett visst klockslag.</p>
+
+    <!-- PROTEIN ALERT -->
+    <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-weight:600;font-size:14px;">&#x1f4aa; Proteinmål</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="alert-prot-enabled" onchange="saveSmartAlerts()" style="width:18px;height:18px;accent-color:var(--green);">
+          <span style="font-size:13px;color:var(--text2);">Aktiv</span>
+        </label>
+      </div>
+      <div class="two">
+        <div class="field" style="margin-bottom:0;">
+          <label>Kolla vid klockan</label>
+          <input type="time" id="alert-prot-time" value="20:00" onchange="saveSmartAlerts()">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Min protein (g)</label>
+          <input type="number" id="alert-prot-min" placeholder="150" onchange="saveSmartAlerts()">
+        </div>
+      </div>
+    </div>
+
+    <!-- WATER ALERT -->
+    <div style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-weight:600;font-size:14px;">💧 Vattenmål</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="alert-water-enabled" onchange="saveSmartAlerts()" style="width:18px;height:18px;accent-color:var(--accent);">
+          <span style="font-size:13px;color:var(--text2);">Aktiv</span>
+        </label>
+      </div>
+      <div class="two">
+        <div class="field" style="margin-bottom:0;">
+          <label>Kolla vid klockan</label>
+          <input type="time" id="alert-water-time" value="21:00" onchange="saveSmartAlerts()">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Min glas vatten</label>
+          <input type="number" id="alert-water-min" placeholder="6" onchange="saveSmartAlerts()">
+        </div>
+      </div>
+    </div>
+
+    <!-- KCAL ALERT -->
+    <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.2);border-radius:12px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-weight:600;font-size:14px;">🔥 Kcal-mål</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="alert-kcal-enabled" onchange="saveSmartAlerts()" style="width:18px;height:18px;accent-color:var(--yellow);">
+          <span style="font-size:13px;color:var(--text2);">Aktiv</span>
+        </label>
+      </div>
+      <div class="two">
+        <div class="field" style="margin-bottom:0;">
+          <label>Kolla vid klockan</label>
+          <input type="time" id="alert-kcal-time" value="20:00" onchange="saveSmartAlerts()">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Min kcal</label>
+          <input type="number" id="alert-kcal-min" placeholder="1500" onchange="saveSmartAlerts()">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="section-title" style="margin-top:0;">💾 Backup</div>
     <button class="btn btn-ghost" onclick="exportData()" style="margin-bottom:8px;">📤 Exportera data</button>
@@ -293,8 +421,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
 <nav class="tabbar">
   <div class="tab active" onclick="switchTab('home')" id="tab-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Idag</div>
   <div class="tab" onclick="switchTab('search')" id="tab-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Sök</div>
-  <div class="tab" onclick="switchTab('stats')" id="tab-stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Stats</div>
   <div class="tab" onclick="switchTab('recipes')" id="tab-recipes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Recept</div>
+  <div class="tab" onclick="switchTab('ai')" id="tab-ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 16v-4M12 8h.01"/></svg>AI</div>
   <div class="tab" onclick="switchTab('settings')" id="tab-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Inst.</div>
 </nav>
 </div>
@@ -474,6 +602,7 @@ function switchTab(tab){
   if(tab==='stats')renderStats();
   if(tab==='search')renderSearchCats();
   if(tab==='settings'){renderSettings();renderRemindersList();}
+  if(tab==='ai'){initAiScreen();}
 }
 
 // ---- HOME ----
@@ -922,6 +1051,89 @@ async function testNtfy(){
   if(res&&res.ok){showToast('✓ Skickad! Kolla ntfy-appen');}
   else{showToast('⚠️ Något gick fel, kolla kanalnamnet');}
 }
+// ---- SMART ALERTS ----
+function getSmartAlerts(){
+  try{return JSON.parse(localStorage.getItem('makro_smart_alerts')||'{}');}catch(e){return{};}
+}
+function saveSmartAlerts(){
+  const alerts={
+    prot:{
+      enabled:document.getElementById('alert-prot-enabled').checked,
+      time:document.getElementById('alert-prot-time').value,
+      min:parseFloat(document.getElementById('alert-prot-min').value)||0
+    },
+    water:{
+      enabled:document.getElementById('alert-water-enabled').checked,
+      time:document.getElementById('alert-water-time').value,
+      min:parseFloat(document.getElementById('alert-water-min').value)||0
+    },
+    kcal:{
+      enabled:document.getElementById('alert-kcal-enabled').checked,
+      time:document.getElementById('alert-kcal-time').value,
+      min:parseFloat(document.getElementById('alert-kcal-min').value)||0
+    }
+  };
+  localStorage.setItem('makro_smart_alerts',JSON.stringify(alerts));
+  scheduleSmartAlerts();
+  showToast('✓ Sparad!');
+}
+function loadSmartAlerts(){
+  const a=getSmartAlerts();
+  if(a.prot){
+    document.getElementById('alert-prot-enabled').checked=a.prot.enabled||false;
+    document.getElementById('alert-prot-time').value=a.prot.time||'20:00';
+    document.getElementById('alert-prot-min').value=a.prot.min||'';
+  }
+  if(a.water){
+    document.getElementById('alert-water-enabled').checked=a.water.enabled||false;
+    document.getElementById('alert-water-time').value=a.water.time||'21:00';
+    document.getElementById('alert-water-min').value=a.water.min||'';
+  }
+  if(a.kcal){
+    document.getElementById('alert-kcal-enabled').checked=a.kcal.enabled||false;
+    document.getElementById('alert-kcal-time').value=a.kcal.time||'20:00';
+    document.getElementById('alert-kcal-min').value=a.kcal.min||'';
+  }
+}
+function scheduleSmartAlerts(){
+  const alerts=getSmartAlerts();
+  const checks=[
+    {key:'prot', label:(min,cur)=>`Du har bara fått i dig ${cur}g protein idag. Målet är ${min}g!`, getValue:()=>{
+      const dk=getDateKey(0),meals=getData()[dk]||[];
+      return meals.reduce((a,m)=>a+(m.prot||0),0);
+    }},
+    {key:'water', label:(min,cur)=>`Du har druckit ${cur} av ${min} glas vatten idag!`, getValue:()=>{
+      return getWater(getDateKey(0));
+    }},
+    {key:'kcal', label:(min,cur)=>`Du har bara ätit ${Math.round(cur)} kcal idag. Målet är ${min} kcal!`, getValue:()=>{
+      const dk=getDateKey(0),meals=getData()[dk]||[];
+      return meals.reduce((a,m)=>a+(m.kcal||0),0);
+    }}
+  ];
+  checks.forEach(({key,label,getValue})=>{
+    const cfg=alerts[key];
+    if(!cfg||!cfg.enabled||!cfg.time)return;
+    const[h,m]=cfg.time.split(':').map(Number);
+    const now=new Date(),next=new Date();
+    next.setHours(h,m,0,0);
+    if(next<=now)next.setDate(next.getDate()+1);
+    const ms=next-now;
+    setTimeout(async()=>{
+      const current=getValue();
+      if(current<cfg.min){
+        await sendNtfy('Makro - '+key.charAt(0).toUpperCase()+key.slice(1)+' påminnelse', label(cfg.min,Math.round(current)));
+      }
+      // Reschedule for next day
+      setInterval(async()=>{
+        const cur=getValue();
+        if(cur<cfg.min){
+          await sendNtfy('Makro - '+key.charAt(0).toUpperCase()+key.slice(1)+' påminnelse', label(cfg.min,Math.round(cur)));
+        }
+      },24*60*60*1000);
+    },ms);
+  });
+}
+
 function scheduleNtfyReminders(){
   const reminders=getReminders();
   reminders.forEach(r=>{
@@ -970,6 +1182,7 @@ function renderSettings(){
   const ch=getNtfyChannel();
   const inp=document.getElementById('ntfy-channel-input');
   if(inp&&ch){inp.value=ch;const st=document.getElementById('ntfy-status');if(st){st.textContent='✓ Kanal sparad: ntfy.sh/'+ch;st.style.color='var(--green)';}}
+  loadSmartAlerts();
 }
 function saveGoals(){
   saveGoalsData({kcal:parseFloat(document.getElementById('goal-kcal').value)||2000,prot:parseFloat(document.getElementById('goal-prot').value)||150,carb:parseFloat(document.getElementById('goal-carb').value)||200,fat:parseFloat(document.getElementById('goal-fat').value)||65});
@@ -1018,8 +1231,138 @@ document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('cl
 // ---- TOAST ----
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 
+// ---- AI CHAT ----
+let chatHistory = [];
+let lastAiRecipe = null;
+
+function getApiKey(){return localStorage.getItem('makro_api_key')||'';}
+function saveApiKey(){
+  const key=document.getElementById('ai-api-key-input').value.trim();
+  if(!key){alert('Ange en API-nyckel');return;}
+  localStorage.setItem('makro_api_key',key);
+  document.getElementById('ai-setup-box').style.display='none';
+  showToast('✓ API-nyckel sparad!');
+}
+
+function initAiScreen(){
+  const key=getApiKey();
+  document.getElementById('ai-setup-box').style.display=key?'none':'block';
+  if(chatHistory.length===0){
+    appendAiMsg('assistant','Hej! Jag är din personliga kostcoach. Jag kan hjälpa dig med:\n\n• Kostfrågor och näringsinfo\n• Receptförslag baserade på dina mål\n• Analysera din dagliga logg\n• Tips för muskeluppbyggnad eller viktnedgång\n\nVad vill du veta?');
+  }
+}
+
+function getTodayContext(){
+  const dk=getDateKey(0),data=getData(),meals=data[dk]||[];
+  const goals=getGoals();
+  let tot={kcal:0,prot:0,carb:0,fat:0};
+  meals.forEach(m=>{tot.kcal+=m.kcal||0;tot.prot+=m.prot||0;tot.carb+=m.carb||0;tot.fat+=m.fat||0;});
+  const water=getWater(dk);
+  return `Användarens dagliga mål: ${goals.kcal} kcal, ${goals.prot}g protein, ${goals.carb}g carbs, ${goals.fat}g fett.
+Dagens logg (${dk}): ${meals.length} måltider - ${Math.round(tot.kcal)} kcal, ${Math.round(tot.prot)}g protein, ${Math.round(tot.carb)}g carbs, ${Math.round(tot.fat)}g fett. Vatten: ${water}/8 glas.
+Måltider: ${meals.map(m=>m.name+'('+m.kcal+'kcal, '+m.prot+'g P)').join(', ')||'Inga loggade'}`;
+}
+
+function appendAiMsg(role, text, showSaveBtn=false){
+  const container=document.getElementById('ai-chat-messages');
+  const div=document.createElement('div');
+  div.className='ai-msg '+role;
+  const bubble=document.createElement('div');
+  bubble.className='ai-bubble';
+  bubble.innerHTML=text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code style="background:var(--surface);padding:1px 5px;border-radius:4px;font-size:12px;">$1</code>');
+  div.appendChild(bubble);
+  if(showSaveBtn&&role==='assistant'){
+    const btn=document.createElement('button');
+    btn.className='save-recipe-btn';
+    btn.innerHTML='+ Spara som recept';
+    btn.onclick=()=>saveAiRecipe(text);
+    div.appendChild(btn);
+  }
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+}
+
+function showTyping(){
+  const container=document.getElementById('ai-chat-messages');
+  const div=document.createElement('div');
+  div.className='ai-msg assistant';div.id='ai-typing';
+  div.innerHTML='<div class="ai-typing"><span></span><span></span><span></span></div>';
+  container.appendChild(div);container.scrollTop=container.scrollHeight;
+}
+function removeTyping(){const t=document.getElementById('ai-typing');if(t)t.remove();}
+
+async function sendAiMessage(){
+  const input=document.getElementById('ai-input');
+  const text=input.value.trim();if(!text)return;
+  const key=getApiKey();
+  if(!key){document.getElementById('ai-setup-box').style.display='block';showToast('⚠️ Ange API-nyckel först!');return;}
+  input.value='';
+  appendAiMsg('user',text);
+  chatHistory.push({role:'user',content:text});
+  showTyping();
+  try{
+    const systemPrompt='Du är en vänlig och kunnig kostcoach inbyggd i en macro-tracking app som heter Makro. Svara alltid på svenska. Håll svaren koncisa och praktiska. När du föreslår recept, inkludera alltid makros (kcal, protein, carbs, fett) i formatet: **Macros:** X kcal | Xg protein | Xg carbs | Xg fett. '+getTodayContext();
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:systemPrompt,messages:chatHistory})
+    });
+    const data=await res.json();
+    removeTyping();
+    if(data.error){appendAiMsg('assistant','Fel: '+data.error.message);return;}
+    const reply=data.content[0].text;
+    chatHistory.push({role:'assistant',content:reply});
+    const isRecipe=reply.toLowerCase().includes('macros:')||reply.toLowerCase().includes('recept');
+    appendAiMsg('assistant',reply,isRecipe);
+    lastAiRecipe=reply;
+  }catch(e){
+    removeTyping();
+    appendAiMsg('assistant','Något gick fel: '+e.message);
+  }
+}
+
+function quickAsk(q){
+  document.getElementById('ai-input').value=q;
+  sendAiMessage();
+}
+
+function askWithLog(){
+  document.getElementById('ai-input').value='Analysera min dagens logg och ge mig konkreta tips på vad jag borde äta mer eller mindre av.';
+  sendAiMessage();
+}
+
+function saveAiRecipe(text){
+  // Parse macros from response
+  let kcal=0,prot=0,carb=0,fat=0;
+  const macroMatch=text.match(/(\d+)\s*kcal.*?(\d+)g?\s*protein.*?(\d+)g?\s*carbs?.*?(\d+)g?\s*fett/i);
+  if(macroMatch){kcal=parseInt(macroMatch[1]);prot=parseInt(macroMatch[2]);carb=parseInt(macroMatch[3]);fat=parseInt(macroMatch[4]);}
+  // Get recipe name (first bold text or first line)
+  const nameMatch=text.match(/\*\*(.*?)\*\*/);
+  const name=nameMatch?nameMatch[1]:'AI-recept';
+  // Pre-fill recipe modal
+  document.getElementById('recipe-name-input').value=name;
+  document.getElementById('recipe-kcal-input').value=kcal;
+  document.getElementById('recipe-prot-input').value=prot;
+  document.getElementById('recipe-carb-input').value=carb;
+  document.getElementById('recipe-fat-input').value=fat;
+  document.getElementById('recipe-ingredients-input').value='';
+  document.getElementById('recipe-notes-input').value=text.replace(/<br>/g,'\n').replace(/<[^>]+>/g,'').substring(0,500);
+  setImgPreview('recipe-img-area',null,'recipe-img-input','handleRecipeImg');
+  editingRecipeId=null;recipeImgData=null;
+  document.getElementById('recipe-modal-title').textContent='Spara AI-recept';
+  document.getElementById('modal-add-recipe').classList.add('open');
+  showToast('Fyll i detaljerna och spara!');
+}
+
+function clearChat(){
+  chatHistory=[];
+  document.getElementById('ai-chat-messages').innerHTML='';
+  initAiScreen();
+}
+
 renderHome();
 scheduleNtfyReminders();
+scheduleSmartAlerts();
 </script>
 </body>
 </html>
