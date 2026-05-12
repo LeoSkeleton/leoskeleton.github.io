@@ -273,9 +273,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
       <label>API-nyckel</label>
       <input type="password" id="ai-api-key-input" placeholder="sk-ant-...">
     </div>
-    <button class="btn btn-primary" onclick="saveApiKey()" style="margin-bottom:8px;">✓ Spara nyckel</button>
-    <button class="btn btn-ghost" onclick="changeApiKey()" id="change-key-btn" style="display:none;">🔑 Byt API-nyckel</button>
+    <button class="btn btn-primary" onclick="saveApiKey()" style="margin-bottom:0;">✓ Spara nyckel</button>
   </div>
+
+  <button class="btn btn-ghost" onclick="changeApiKey()" id="change-key-btn" style="display:none;margin-bottom:12px;">🔑 Byt API-nyckel</button>
 
   <!-- QUICK SUGGESTIONS -->
   <div id="ai-suggestions" style="margin-bottom:12px;">
