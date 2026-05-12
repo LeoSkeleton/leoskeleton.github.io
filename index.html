@@ -1314,16 +1314,16 @@ async function sendAiMessage(){
   showTyping();
   try{
     const systemPrompt='Du är en vänlig och kunnig kostcoach inbyggd i en macro-tracking app som heter Makro. Svara alltid på svenska. Håll svaren koncisa och praktiska. När du föreslår recept, inkludera alltid makros (kcal, protein, carbs, fett) i formatet: **Macros:** X kcal | Xg protein | Xg carbs | Xg fett. '+getTodayContext();
-    // Use CORS proxy to reach Anthropic API from browser
-    const res=await fetch('https://corsproxy.io/?https://api.anthropic.com/v1/messages',{
+    // Via Cloudflare Worker proxy (CORS fix)
+    const body=JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,system:systemPrompt,messages:chatHistory});
+    const res=await fetch('https://makro-ai.leo-dahlstrom.workers.dev',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
         'x-api-key':key,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-calls':'true'
+        'anthropic-version':'2023-06-01'
       },
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,system:systemPrompt,messages:chatHistory})
+      body:body
     });
     if(!res.ok){
       const err=await res.json().catch(()=>({}));
