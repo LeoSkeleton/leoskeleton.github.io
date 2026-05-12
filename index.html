@@ -278,6 +278,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
 
   <button class="btn btn-ghost" onclick="changeApiKey()" id="change-key-btn" style="display:none;margin-bottom:12px;">🔑 Byt API-nyckel</button>
 
+  <!-- MEMORY BOX -->
+  <div id="ai-memory-box" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:600;">🧠 Jag kommer ihåg</div>
+      <button class="btn btn-sm btn-danger" onclick="clearAiMemory();renderAiMemory();">Rensa</button>
+    </div>
+    <div id="ai-memory-list" style="font-size:13px;color:var(--text2);line-height:1.8;"></div>
+  </div>
+
   <!-- QUICK SUGGESTIONS -->
   <div id="ai-suggestions" style="margin-bottom:12px;">
     <div style="font-size:12px;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Snabbfrågor</div>
@@ -1233,6 +1242,41 @@ document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('cl
 // ---- TOAST ----
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 
+// ---- AI MEMORY ----
+function getAiMemory(){try{return JSON.parse(localStorage.getItem('makro_ai_memory')||'[]');}catch(e){return[];}}
+function saveAiMemory(mem){localStorage.setItem('makro_ai_memory',JSON.stringify(mem.slice(-20)));}
+function extractAndSaveMemory(history){
+  // Extract key facts from last user message
+  const last=history.filter(m=>m.role==='user').slice(-1)[0];
+  if(!last)return;
+  const txt=last.content.toLowerCase();
+  const mem=getAiMemory();
+  const goals=getGoals();
+  // Auto-remember goals
+  const goalStr=`Mål: ${goals.kcal} kcal, ${goals.prot}g protein per dag`;
+  if(!mem.includes(goalStr))mem.push(goalStr);
+  // Remember weight if mentioned
+  const weightMatch=last.content.match(/(\d{2,3})\s*kg/);
+  if(weightMatch){
+    const fact=`Väger ${weightMatch[1]} kg`;
+    if(!mem.find(m=>m.startsWith('Väger')))mem.push(fact);
+  }
+  // Remember goal if mentioned
+  if(txt.includes('bygga muskler')||txt.includes('bulk'))mem.push('Mål: bygga muskler');
+  if(txt.includes('gå ner')||txt.includes('banta'))mem.push('Mål: gå ner i vikt');
+  if(txt.includes('vegetar'))mem.push('Vegetarian');
+  if(txt.includes('vegan'))mem.push('Vegan');
+  if(txt.includes('laktos'))mem.push('Laktosintolerant');
+  if(txt.includes('gluten'))mem.push('Glutenintolerant');
+  // Deduplicate and save
+  const unique=[...new Set(mem)];
+  saveAiMemory(unique);
+}
+function clearAiMemory(){
+  localStorage.removeItem('makro_ai_memory');
+  showToast('Minne rensat');
+}
+
 // ---- AI CHAT ----
 let chatHistory = [];
 let lastAiRecipe = null;
@@ -1255,10 +1299,19 @@ function changeApiKey(){
   showToast('Ange ny API-nyckel');
 }
 
+function renderAiMemory(){
+  const mem=getAiMemory();
+  const box=document.getElementById('ai-memory-box');
+  const list=document.getElementById('ai-memory-list');
+  if(!mem.length){box.style.display='none';return;}
+  box.style.display='block';
+  list.innerHTML=mem.map(m=>'• '+m).join('<br>');
+}
 function initAiScreen(){
   const key=getApiKey();
   document.getElementById('ai-setup-box').style.display=key?'none':'block';
   document.getElementById('change-key-btn').style.display=key?'block':'none';
+  renderAiMemory();
   if(chatHistory.length===0){
     appendAiMsg('assistant','Hej! Jag är din personliga kostcoach. Jag kan hjälpa dig med:\n\n• Kostfrågor och näringsinfo\n• Receptförslag baserade på dina mål\n• Analysera din dagliga logg\n• Tips för muskeluppbyggnad eller viktnedgång\n\nVad vill du veta?');
   }
@@ -1313,9 +1366,11 @@ async function sendAiMessage(){
   chatHistory.push({role:'user',content:text});
   showTyping();
   try{
-    const systemPrompt='Du är en vänlig och kunnig kostcoach inbyggd i en macro-tracking app som heter Makro. Svara alltid på svenska. Håll svaren koncisa och praktiska. När du föreslår recept, inkludera alltid makros (kcal, protein, carbs, fett) i formatet: **Macros:** X kcal | Xg protein | Xg carbs | Xg fett. '+getTodayContext();
+    const memory=getAiMemory();
+    const memoryText=memory.length?'\nVad du vet om användaren:\n'+memory.map(m=>'- '+m).join('\n'):'';
+    const systemPrompt='Du är kostcoach i appen Makro. Svara ALLTID på svenska. Var KORT och koncis, max 3-4 meningar om inget annat krävs. Vid recept: ange **Macros:** X kcal | Xg P | Xg C | Xg F. Lär dig av konversationen och kom ihåg användarens mål och preferenser.'+memoryText+'\n'+getTodayContext();
     // Via Cloudflare Worker proxy (CORS fix)
-    const body=JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,system:systemPrompt,messages:chatHistory});
+    const body=JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:600,system:systemPrompt,messages:chatHistory});
     const res=await fetch('https://makro-ai.leo-dahlstrom.workers.dev',{
       method:'POST',
       headers:{
@@ -1342,6 +1397,9 @@ async function sendAiMessage(){
     const isRecipe=reply.toLowerCase().includes('macros:')||reply.toLowerCase().includes('recept');
     appendAiMsg('assistant',reply,isRecipe);
     lastAiRecipe=reply;
+    // Extract memory from conversation
+    extractAndSaveMemory(chatHistory);
+    renderAiMemory();
   }catch(e){
     removeTyping();
     if(e.message.includes('fetch')||e.message.includes('Failed')){
