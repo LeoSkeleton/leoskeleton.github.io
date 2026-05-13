@@ -563,6 +563,37 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
 
 <div class="toast" id="toast"></div>
 
+<!-- SAVE MEAL TO CATEGORY -->
+<div class="modal-overlay" id="modal-save-to-cat">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="save-to-cat-title">Spara måltid</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Sparas i kategorin utan att loggas på dagen.</p>
+    <div class="field"><label>Namn</label><input type="text" id="stc-name-input" placeholder="T.ex. Proteinpannkakor"></div>
+    <div class="four">
+      <div class="field"><label>Kcal</label><input type="number" id="stc-kcal-input" placeholder="0"></div>
+      <div class="field"><label>Protein</label><input type="number" id="stc-prot-input" placeholder="0"></div>
+      <div class="field"><label>Carbs</label><input type="number" id="stc-carb-input" placeholder="0"></div>
+      <div class="field"><label>Fett</label><input type="number" id="stc-fat-input" placeholder="0"></div>
+    </div>
+    <div class="field"><label>Underkategori (valfritt)</label><input type="text" id="stc-subcat-input" placeholder="T.ex. Desert"></div>
+    <div class="field"><label>Anteckningar</label><textarea id="stc-notes-input" placeholder="Valfritt..."></textarea></div>
+    <button class="btn btn-primary" onclick="confirmSaveToCat()" style="margin-bottom:8px;">✓ Spara</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-save-to-cat')">Avbryt</button>
+  </div>
+</div>
+
+<!-- MANAGE QUICK ADD -->
+<div class="modal-overlay" id="modal-manage-quick">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚡ Hantera snabbtillägg</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Välj vilka recept som visas i snabbtillägg.</p>
+    <div id="manage-quick-list"></div>
+    <button class="btn btn-ghost" onclick="closeModal('modal-manage-quick')" style="margin-top:8px;">Klar</button>
+  </div>
+</div>
+
 <script>
 // ---- STATE ----
 let currentDateOffset=0,editingRecipeId=null,viewingRecipeId=null;
@@ -602,6 +633,12 @@ function saveGoalsData(g){localStorage.setItem('makro_goals',JSON.stringify(g));
 function getWater(k){try{const w=JSON.parse(localStorage.getItem('makro_water')||'{}');return w[k]||0;}catch(e){return 0;}}
 function setWater(k,v){try{const w=JSON.parse(localStorage.getItem('makro_water')||'{}');w[k]=v;localStorage.setItem('makro_water',JSON.stringify(w));}catch(e){}}
 function getReminders(){try{return JSON.parse(localStorage.getItem('makro_reminders')||'[]');}catch(e){return[];}}
+function getSubcats(){try{return JSON.parse(localStorage.getItem('makro_subcats')||'{}');}catch(e){return{};}}
+function saveSubcats(s){localStorage.setItem('makro_subcats',JSON.stringify(s));}
+function getSavedMeals(){try{return JSON.parse(localStorage.getItem('makro_saved_meals')||'[]');}catch(e){return[];}}
+function saveSavedMeals(m){localStorage.setItem('makro_saved_meals',JSON.stringify(m));}
+function getQuickAddOrder(){try{return JSON.parse(localStorage.getItem('makro_quick_order')||'null');}catch(e){return null;}}
+function saveQuickAddOrder(o){localStorage.setItem('makro_quick_order',JSON.stringify(o));}
 function saveReminders(r){localStorage.setItem('makro_reminders',JSON.stringify(r));}
 
 // ---- TABS ----
@@ -639,29 +676,97 @@ function renderHome(){
   if(!meals.length){list.innerHTML=`<div class="empty-state"><div class="ei">🍽️</div><p>Inga måltider loggade ännu.</p></div>`;return;}
   const cats=['frukost','lunch','middag','snack','övrigt'];
   const ce={frukost:'🌅',lunch:'☀️',middag:'🌙',snack:'🍎',övrigt:'🍽️'};
+  const subcats=getSubcats();
+  const collapsed=JSON.parse(sessionStorage.getItem('collapsed_cats')||'{}');
   let html='';
   cats.forEach(cat=>{
     const cm=meals.map((m,i)=>({...m,_i:i})).filter(m=>(m.cat||'övrigt')===cat);
     if(!cm.length)return;
-    html+=`<div class="section-title" style="margin-top:8px;">${ce[cat]} ${cat.charAt(0).toUpperCase()+cat.slice(1)}</div>`;
-    cm.forEach(m=>{html+=`<div class="meal-item" onclick="viewMealDetail('${dk}',${m._i})">
-      ${m.image?`<img class="meal-item-img" src="${m.image}" alt="${m.name}">`:''}
-      <div class="meal-item-body">
-        <div class="meal-item-top">
-          <div><div class="meal-name">${m.name}</div><div class="meal-time">${m.time||''}</div></div>
-          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteMeal('${dk}',${m._i})">✕</button>
-        </div>
-        ${m.notes?`<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic;">${m.notes}</div>`:''}
-        <div class="meal-macros">
-          <span class="meal-tag kcal">${m.kcal} kcal</span>
-          <span class="meal-tag prot">${m.prot}g P</span>
-          <span class="meal-tag carb">${m.carb}g C</span>
-          <span class="meal-tag fat">${m.fat}g F</span>
-        </div>
+    const isCollapsed=collapsed[cat];
+    const catSubcats=subcats[cat]||[];
+    // Category header with +, long-press for subcats, collapse arrow
+    html+=`<div style="display:flex;align-items:center;gap:6px;margin-top:10px;margin-bottom:6px;">
+      <div style="flex:1;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:2px;cursor:pointer;user-select:none;"
+        onclick="toggleCatCollapse('${cat}')"
+        oncontextmenu="event.preventDefault();openSubcatMenu('${cat}')"
+        ontouchstart="startLongPress('${cat}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">
+        ${ce[cat]} ${cat.charAt(0).toUpperCase()+cat.slice(1)}
+        <span style="margin-left:4px;color:var(--text3);font-size:10px;">${isCollapsed?'▶':'▼'}</span>
       </div>
-    </div>`;});
+      <button onclick="openSaveMealToCat('${cat}')" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;">+</button>
+    </div>`;
+    if(!isCollapsed){
+      // Group by subcat
+      if(catSubcats.length){
+        // Ungrouped first
+        const ungrouped=cm.filter(m=>!m.subcat);
+        ungrouped.forEach(m=>{html+=mealCard(m,dk);});
+        catSubcats.forEach(sc=>{
+          const scMeals=cm.filter(m=>m.subcat===sc);
+          if(!scMeals.length)return;
+          const scCollapsed=collapsed[cat+':'+sc];
+          html+=`<div style="display:flex;align-items:center;gap:6px;margin:8px 0 4px 12px;cursor:pointer;" onclick="toggleCatCollapse('${cat}:${sc}')">
+            <div style="font-size:11px;color:var(--purple);font-weight:600;text-transform:uppercase;letter-spacing:1px;">◆ ${sc}</div>
+            <span style="color:var(--text3);font-size:10px;">${scCollapsed?'▶':'▼'}</span>
+            <button onclick="event.stopPropagation();deleteSubcat('${cat}','${sc}')" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;margin-left:auto;">✕</button>
+          </div>`;
+          if(!scCollapsed) scMeals.forEach(m=>{html+=mealCard(m,dk,true);});
+        });
+      } else {
+        cm.forEach(m=>{html+=mealCard(m,dk);});
+      }
+    }
   });
   list.innerHTML=html;
+}
+
+function mealCard(m,dk,indented=false){
+  return `<div class="meal-item" style="${indented?'margin-left:12px;':''}" onclick="viewMealDetail('${dk}',${m._i})">
+    ${m.image?`<img class="meal-item-img" src="${m.image}" alt="${m.name}">`:''}
+    <div class="meal-item-body">
+      <div class="meal-item-top">
+        <div><div class="meal-name">${m.name}</div><div class="meal-time">${m.time||''}${m.subcat?` · <span style="color:var(--purple);font-size:10px;">◆ ${m.subcat}</span>`:''}</div></div>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteMeal('${dk}',${m._i})">✕</button>
+      </div>
+      ${m.notes?`<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic;">${m.notes}</div>`:''}
+      <div class="meal-macros">
+        <span class="meal-tag kcal">${m.kcal} kcal</span>
+        <span class="meal-tag prot">${m.prot}g P</span>
+        <span class="meal-tag carb">${m.carb}g C</span>
+        <span class="meal-tag fat">${m.fat}g F</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleCatCollapse(cat){
+  const c=JSON.parse(sessionStorage.getItem('collapsed_cats')||'{}');
+  c[cat]=!c[cat];
+  sessionStorage.setItem('collapsed_cats',JSON.stringify(c));
+  renderHome();
+}
+
+let longPressTimer=null;
+function startLongPress(cat){longPressTimer=setTimeout(()=>openSubcatMenu(cat),600);}
+function cancelLongPress(){if(longPressTimer)clearTimeout(longPressTimer);}
+
+function openSubcatMenu(cat){
+  const name=prompt(`Ny underkategori under "${cat}":`);
+  if(!name||!name.trim())return;
+  const subcats=getSubcats();
+  if(!subcats[cat])subcats[cat]=[];
+  if(!subcats[cat].includes(name.trim()))subcats[cat].push(name.trim());
+  saveSubcats(subcats);
+  renderHome();
+  showToast('✓ Underkategori skapad!');
+}
+
+function deleteSubcat(cat,sc){
+  if(!confirm(`Ta bort underkategorin "${sc}"?`))return;
+  const subcats=getSubcats();
+  subcats[cat]=(subcats[cat]||[]).filter(s=>s!==sc);
+  saveSubcats(subcats);
+  renderHome();
 }
 
 function renderStreak(){
@@ -682,12 +787,20 @@ function renderQuickScroll(){
   const recipes=getRecipes(),section=document.getElementById('quick-section');
   if(!recipes.length){section.style.display='none';return;}
   section.style.display='block';
-  document.getElementById('quick-scroll').innerHTML=recipes.map(r=>`
+  const order=getQuickAddOrder()||[];
+  const visible=recipes.filter(r=>!order.includes('hide:'+r.id));
+  const cards=visible.map(r=>`
     <div class="quick-card" onclick="quickAdd('${r.id}')">
       <div class="quick-thumb">${r.image?`<img src="${r.image}" alt="${r.name}">`:`<span>${getEmoji(r.name)}</span>`}</div>
       <div class="quick-card-name">${r.name}</div>
       <div class="quick-card-kcal">${r.kcal} kcal · ${r.prot}g P</div>
     </div>`).join('');
+  // Add manage button at end
+  const manageBtn=`<div class="quick-card" onclick="openManageQuick()" style="justify-content:center;align-items:center;display:flex;flex-direction:column;gap:6px;opacity:0.6;">
+    <div style="font-size:24px;">⚙️</div>
+    <div class="quick-card-name" style="text-align:center;">Hantera</div>
+  </div>`;
+  document.getElementById('quick-scroll').innerHTML=cards+manageBtn;
 }
 
 function getEmoji(n){n=(n||'').toLowerCase();
@@ -1121,40 +1234,34 @@ async function scheduleSmartAlerts(){
   const alerts=getSmartAlerts();
   const channel=getNtfyChannel().trim();
   if(!channel)return;
+  // Check values at alert time dynamically - use a single daily check
+  // Schedule one check per alert that evaluates AT the time it fires
   const checks=[
-    {key:'prot',getMsg:(min,cur)=>`Du har bara fatt i dig ${cur}g protein idag. Malet ar ${min}g - ata mer protein!`},
-    {key:'water',getMsg:(min,cur)=>`Du har druckit ${cur} av ${min} glas vatten idag. Kom igang!`},
-    {key:'kcal',getMsg:(min,cur)=>`Du har bara atit ${Math.round(cur)} kcal idag. Malet ar ${min} kcal!`}
+    {key:'prot',title:'Protein-paminnelse',getMsg:(min,cur)=>`Du har fatt i dig ${cur}g av ${min}g protein idag. Ata mer protein!`},
+    {key:'water',title:'Vatten-paminnelse',getMsg:(min,cur)=>`Du har druckit ${cur} av ${min} glas vatten idag!`},
+    {key:'kcal',title:'Kcal-paminnelse',getMsg:(min,cur)=>`Du har atit ${Math.round(cur)} av ${min} kcal idag!`}
   ];
-  for(const {key,getMsg} of checks){
+  for(const {key,title,getMsg} of checks){
     const cfg=alerts[key];
     if(!cfg||!cfg.enabled||!cfg.time)continue;
     const[h,m]=cfg.time.split(':').map(Number);
     const now=new Date(),next=new Date();
     next.setHours(h,m,0,0);
     if(next<=now)next.setDate(next.getDate()+1);
-    const atTime=Math.floor(next.getTime()/1000);
-    // Get current values to include in message
-    const dk=getDateKey(0),meals=getData()[dk]||[];
-    let cur=0;
-    if(key==='prot')cur=Math.round(meals.reduce((a,m)=>a+(m.prot||0),0));
-    if(key==='water')cur=getWater(dk);
-    if(key==='kcal')cur=Math.round(meals.reduce((a,m)=>a+(m.kcal||0),0));
-    // Only schedule if not yet at goal
-    if(cur>=cfg.min)continue;
-    try{
-      await fetch('https://ntfy.sh/'+channel,{
-        method:'POST',
-        headers:{
-          'Content-Type':'text/plain;charset=utf-8',
-          'X-Title':'Makro - Smart paminnelse',
-          'X-Priority':'high',
-          'X-Tags':'warning',
-          'X-At':String(atTime)
-        },
-        body:getMsg(cfg.min,cur)
-      });
-    }catch(e){console.log('smart alert error',e);}
+    // Only schedule if alert is in the future today
+    const msUntil=next-now;
+    // Use setTimeout to check at the right time - only send if goal not met
+    setTimeout(async()=>{
+      const dk=getDateKey(0),meals=getData()[dk]||[];
+      let cur=0;
+      if(key==='prot')cur=Math.round(meals.reduce((a,m)=>a+(m.prot||0),0));
+      else if(key==='water')cur=getWater(dk);
+      else if(key==='kcal')cur=Math.round(meals.reduce((a,m)=>a+(m.kcal||0),0));
+      // Only send if goal NOT met at alert time
+      if(cur<cfg.min){
+        await sendNtfy(title,getMsg(cfg.min,cur));
+      }
+    },msUntil);
   }
 }
 
@@ -1514,6 +1621,63 @@ async function saveAiRecipe(text){
 function clearChat(){
   if(!confirm('Rensa hela konversationen?'))return;
   clearChatHistory();
+}
+
+// ---- SAVE MEAL TO CATEGORY ----
+let saveToCatTarget = null;
+function openSaveMealToCat(cat){
+  saveToCatTarget=cat;
+  document.getElementById('save-to-cat-title').textContent='Spara under '+cat.charAt(0).toUpperCase()+cat.slice(1);
+  ['stc-name-input','stc-kcal-input','stc-prot-input','stc-carb-input','stc-fat-input','stc-subcat-input','stc-notes-input'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modal-save-to-cat').classList.add('open');
+}
+function confirmSaveToCat(){
+  const name=document.getElementById('stc-name-input').value.trim();
+  if(!name){alert('Ange ett namn');return;}
+  const meal={
+    id:Date.now().toString(),name,cat:saveToCatTarget,
+    kcal:parseFloat(document.getElementById('stc-kcal-input').value)||0,
+    prot:parseFloat(document.getElementById('stc-prot-input').value)||0,
+    carb:parseFloat(document.getElementById('stc-carb-input').value)||0,
+    fat:parseFloat(document.getElementById('stc-fat-input').value)||0,
+    subcat:document.getElementById('stc-subcat-input').value.trim()||null,
+    notes:document.getElementById('stc-notes-input').value.trim(),
+    image:null,savedAt:new Date().toISOString()
+  };
+  // Also add as recipe for quick add
+  const recipes=getRecipes();
+  recipes.unshift({...meal,ingredients:'',savedAt:new Date().toISOString()});
+  saveRecipes(recipes);
+  closeModal('modal-save-to-cat');
+  renderHome();renderRecipes();
+  showToast('✓ '+name+' sparad!');
+}
+
+// ---- MANAGE QUICK ADD ----
+function openManageQuick(){
+  const recipes=getRecipes();
+  const order=getQuickAddOrder()||recipes.map(r=>r.id);
+  const el=document.getElementById('manage-quick-list');
+  if(!recipes.length){el.innerHTML='<p style="color:var(--text2);font-size:13px;">Inga recept att visa.</p>';document.getElementById('modal-manage-quick').classList.add('open');return;}
+  el.innerHTML=recipes.map(r=>{
+    const visible=!order.includes('hide:'+r.id);
+    return `<div class="card-sm" style="display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;font-size:14px;font-weight:500;">${r.name}</div>
+      <div style="font-size:12px;color:var(--text2);">${r.kcal} kcal</div>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" ${visible?'checked':''} onchange="toggleQuickVisible('${r.id}',this.checked)" style="width:18px;height:18px;accent-color:var(--accent);">
+      </label>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-manage-quick').classList.add('open');
+}
+function toggleQuickVisible(id,visible){
+  const order=getQuickAddOrder()||[];
+  const hideKey='hide:'+id;
+  if(!visible){if(!order.includes(hideKey))order.push(hideKey);}
+  else{const i=order.indexOf(hideKey);if(i>-1)order.splice(i,1);}
+  saveQuickAddOrder(order);
+  renderQuickScroll();
 }
 
 renderHome();
