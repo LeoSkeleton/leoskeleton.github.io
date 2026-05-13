@@ -239,7 +239,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
 
 <!-- SEARCH -->
 <div id="screen-search" class="screen">
-  <div class="topbar"><div class="topbar-title">Sök 🔍</div></div><br>
+  <div class="topbar">
+    <div class="topbar-title">Sök 🔍</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm btn-ghost" onclick="openSaveMealToCat('övrigt')" style="font-size:18px;padding:6px 10px;">+</button>
+      <button class="btn btn-sm btn-ghost" onclick="openSearchSubcatManager()" style="font-size:16px;padding:6px 10px;">⚙️</button>
+    </div>
+  </div><br>
   <div class="search-input-wrap"><span class="search-icon">🔍</span><input type="text" id="search-input" placeholder="Sök måltider..." oninput="runSearch()"></div>
   <div class="cat-filter" id="search-cat-filter"></div>
   <div id="search-results"></div>
@@ -253,7 +259,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
 
 <!-- RECIPES -->
 <div id="screen-recipes" class="screen">
-  <div class="topbar"><div class="topbar-title">Recept 📖</div></div><br>
+  <div class="topbar">
+    <div class="topbar-title">Recept 📖</div>
+    <button class="btn btn-sm btn-ghost" onclick="openRecipeSubcatManager()" style="font-size:16px;padding:6px 10px;">⚙️</button>
+  </div><br>
   <div class="search-input-wrap"><span class="search-icon">🔍</span><input type="text" id="recipe-search-input" placeholder="Sök recept..." oninput="filterRecipes()"></div>
   <button class="btn btn-primary" onclick="openAddRecipe()" style="margin-bottom:14px;">+ Nytt recept</button>
   <div id="recipes-list"></div>
@@ -519,6 +528,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
       <div class="field"><label>Carbs</label><input type="number" id="recipe-carb-input"></div>
       <div class="field"><label>Fett</label><input type="number" id="recipe-fat-input"></div>
     </div>
+    <div class="field"><label>Kategori (valfritt)</label>
+      <select id="recipe-subcat-select" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:15px;outline:none;">
+        <option value="">Ingen kategori</option>
+      </select>
+    </div>
     <div class="field"><label>Ingredienser</label><textarea id="recipe-ingredients-input" placeholder="½ banan, 1 ägg..."></textarea></div>
     <div class="field"><label>Anteckningar</label><textarea id="recipe-notes-input" placeholder="Tips..."></textarea></div>
     <div class="field"><label>Bild</label><div class="img-upload-area" id="recipe-img-area"><div class="hint"><div class="hint-icon">📷</div>Tryck för bild</div><input type="file" id="recipe-img-input" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onchange="handleRecipeImg(event)"></div></div>
@@ -580,6 +594,36 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,
     <div class="field"><label>Anteckningar</label><textarea id="stc-notes-input" placeholder="Valfritt..."></textarea></div>
     <button class="btn btn-primary" onclick="confirmSaveToCat()" style="margin-bottom:8px;">✓ Spara</button>
     <button class="btn btn-ghost" onclick="closeModal('modal-save-to-cat')">Avbryt</button>
+  </div>
+</div>
+
+<!-- SUBCAT MANAGER -->
+<div class="modal-overlay" id="modal-subcat-manager">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="subcat-manager-title">Underkategorier</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Hantera underkategorier. Tryck + för att lägga till.</p>
+    <div id="subcat-manager-list"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <input type="text" id="subcat-new-input" placeholder="Ny underkategori..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:15px;outline:none;">
+      <button class="btn btn-green btn-sm" onclick="addSubcatFromManager()" style="flex-shrink:0;padding:10px 16px;">+</button>
+    </div>
+    <button class="btn btn-ghost" onclick="closeModal('modal-subcat-manager')" style="margin-top:10px;">Klar</button>
+  </div>
+</div>
+
+<!-- RECIPE SUBCAT MANAGER -->
+<div class="modal-overlay" id="modal-recipe-subcat-manager">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Receptkategorier</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Skapa egna kategorier för recept.</p>
+    <div id="recipe-subcat-list"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <input type="text" id="recipe-subcat-new-input" placeholder="Ny kategori..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:15px;outline:none;">
+      <button class="btn btn-green btn-sm" onclick="addRecipeSubcat()" style="flex-shrink:0;padding:10px 16px;">+</button>
+    </div>
+    <button class="btn btn-ghost" onclick="closeModal('modal-recipe-subcat-manager')" style="margin-top:10px;">Klar</button>
   </div>
 </div>
 
@@ -687,12 +731,11 @@ function renderHome(){
     // Category header with +, long-press for subcats, collapse arrow
     html+=`<div style="display:flex;align-items:center;gap:6px;margin-top:10px;margin-bottom:6px;">
       <div style="flex:1;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:2px;cursor:pointer;user-select:none;"
-        onclick="toggleCatCollapse('${cat}')"
-        oncontextmenu="event.preventDefault();openSubcatMenu('${cat}')"
-        ontouchstart="startLongPress('${cat}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">
+        onclick="toggleCatCollapse('${cat}')">
         ${ce[cat]} ${cat.charAt(0).toUpperCase()+cat.slice(1)}
         <span style="margin-left:4px;color:var(--text3);font-size:10px;">${isCollapsed?'▶':'▼'}</span>
       </div>
+      <button onclick="openSubcatMenu('${cat}')" style="background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;padding:0 4px;">⚙️</button>
       <button onclick="openSaveMealToCat('${cat}')" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;">+</button>
     </div>`;
     if(!isCollapsed){
@@ -990,7 +1033,10 @@ function renderRecipes(filter=''){
   if(filter)recipes=recipes.filter(r=>r.name.toLowerCase().includes(filter.toLowerCase())||(r.notes||'').toLowerCase().includes(filter.toLowerCase()));
   const list=document.getElementById('recipes-list');
   if(!recipes.length){list.innerHTML=`<div class="empty-state"><div class="ei">📖</div><p>${filter?'Inga recept matchar.':'Inga sparade recept ännu.'}</p></div>`;return;}
-  list.innerHTML=recipes.map(r=>`
+  const subcats=getRecipeSubcats();
+  const collapsed=JSON.parse(sessionStorage.getItem('collapsed_recipe_cats')||'{}');
+
+  const recipeCard=r=>`
     <div class="recipe-item" onclick="viewRecipe('${r.id}')">
       ${r.image?`<img class="recipe-item-img" src="${r.image}" alt="${r.name}">`:''}
       <div class="recipe-item-body">
@@ -1001,16 +1047,55 @@ function renderRecipes(filter=''){
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
           <span class="meal-tag kcal">${r.kcal} kcal</span><span class="meal-tag prot">${r.prot}g P</span>
           <span class="meal-tag carb">${r.carb}g C</span><span class="meal-tag fat">${r.fat}g F</span>
+          ${r.recipeSubcat?`<span class="cat-tag">${r.recipeSubcat}</span>`:''}
         </div>
         ${r.notes?`<div style="font-size:12px;color:var(--text2);margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${r.notes}</div>`:''}
       </div>
-    </div>`).join('');
+    </div>`;
+
+  if(!subcats.length||filter){
+    list.innerHTML=recipes.map(recipeCard).join('');
+    return;
+  }
+
+  let html='';
+  // Uncategorized first
+  const uncat=recipes.filter(r=>!r.recipeSubcat);
+  if(uncat.length){
+    html+=`<div class="section-title" style="margin-top:0;">Alla recept</div>`;
+    html+=uncat.map(recipeCard).join('');
+  }
+  // By subcat
+  subcats.forEach(sc=>{
+    const scRecipes=recipes.filter(r=>r.recipeSubcat===sc);
+    if(!scRecipes.length)return;
+    const isCollapsed=collapsed[sc];
+    html+=`<div style="display:flex;align-items:center;gap:6px;margin:12px 0 8px;cursor:pointer;" onclick="toggleRecipeCatCollapse('${sc}')">
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:2px;flex:1;">◆ ${sc}</div>
+      <span style="color:var(--text3);font-size:10px;">${isCollapsed?'▶':'▼'}</span>
+    </div>`;
+    if(!isCollapsed)html+=scRecipes.map(recipeCard).join('');
+  });
+  list.innerHTML=html;
+}
+
+function toggleRecipeCatCollapse(sc){
+  const c=JSON.parse(sessionStorage.getItem('collapsed_recipe_cats')||'{}');
+  c[sc]=!c[sc];
+  sessionStorage.setItem('collapsed_recipe_cats',JSON.stringify(c));
+  renderRecipes();
 }
 function filterRecipes(){renderRecipes(document.getElementById('recipe-search-input').value);}
+function populateRecipeSubcatSelect(selected=''){
+  const sel=document.getElementById('recipe-subcat-select');
+  const subcats=getRecipeSubcats();
+  sel.innerHTML='<option value="">Ingen kategori</option>'+subcats.map(sc=>`<option value="${sc}" ${sc===selected?'selected':''}>${sc}</option>`).join('');
+}
 function openAddRecipe(){
   editingRecipeId=null;recipeImgData=null;
   document.getElementById('recipe-modal-title').textContent='Nytt recept';
   ['recipe-name-input','recipe-kcal-input','recipe-prot-input','recipe-carb-input','recipe-fat-input','recipe-ingredients-input','recipe-notes-input'].forEach(id=>document.getElementById(id).value='');
+  populateRecipeSubcatSelect();
   setImgPreview('recipe-img-area',null,'recipe-img-input','handleRecipeImg');
   document.getElementById('modal-add-recipe').classList.add('open');
 }
@@ -1018,7 +1103,7 @@ function handleRecipeImg(e){const file=e.target.files[0];if(!file)return;const r
 function saveRecipe(){
   const name=document.getElementById('recipe-name-input').value.trim();if(!name){alert('Ange ett namn');return;}
   const existing=editingRecipeId?(getRecipes().find(r=>r.id===editingRecipeId)||{}):{};
-  const recipe={id:editingRecipeId||Date.now().toString(),name,kcal:parseFloat(document.getElementById('recipe-kcal-input').value)||0,prot:parseFloat(document.getElementById('recipe-prot-input').value)||0,carb:parseFloat(document.getElementById('recipe-carb-input').value)||0,fat:parseFloat(document.getElementById('recipe-fat-input').value)||0,ingredients:document.getElementById('recipe-ingredients-input').value.trim(),notes:document.getElementById('recipe-notes-input').value.trim(),image:recipeImgData||existing.image||null,savedAt:new Date().toISOString()};
+  const recipe={id:editingRecipeId||Date.now().toString(),name,kcal:parseFloat(document.getElementById('recipe-kcal-input').value)||0,prot:parseFloat(document.getElementById('recipe-prot-input').value)||0,carb:parseFloat(document.getElementById('recipe-carb-input').value)||0,fat:parseFloat(document.getElementById('recipe-fat-input').value)||0,ingredients:document.getElementById('recipe-ingredients-input').value.trim(),notes:document.getElementById('recipe-notes-input').value.trim(),recipeSubcat:document.getElementById('recipe-subcat-select').value||null,image:recipeImgData||existing.image||null,savedAt:new Date().toISOString()};
   let recipes=getRecipes();
   if(editingRecipeId)recipes=recipes.map(r=>r.id===editingRecipeId?recipe:r);else recipes.unshift(recipe);
   saveRecipes(recipes);closeModal('modal-add-recipe');closeModal('modal-view-recipe');renderRecipes();renderHome();showToast('✓ Recept sparat!');
@@ -1051,6 +1136,7 @@ function editCurrentRecipe(){
   document.getElementById('recipe-prot-input').value=r.prot;document.getElementById('recipe-carb-input').value=r.carb;
   document.getElementById('recipe-fat-input').value=r.fat;document.getElementById('recipe-ingredients-input').value=r.ingredients||'';
   document.getElementById('recipe-notes-input').value=r.notes||'';
+  populateRecipeSubcatSelect(r.recipeSubcat||'');
   setImgPreview('recipe-img-area',r.image||null,'recipe-img-input','handleRecipeImg');
   closeModal('modal-view-recipe');document.getElementById('modal-add-recipe').classList.add('open');
 }
@@ -1621,6 +1707,93 @@ async function saveAiRecipe(text){
 function clearChat(){
   if(!confirm('Rensa hela konversationen?'))return;
   clearChatHistory();
+}
+
+// ---- RECIPE SUBCATEGORIES ----
+function getRecipeSubcats(){try{return JSON.parse(localStorage.getItem('makro_recipe_subcats')||'[]');}catch(e){return[];}}
+function saveRecipeSubcats(s){localStorage.setItem('makro_recipe_subcats',JSON.stringify(s));}
+
+function openSearchSubcatManager(){
+  // Search uses meal categories - open general subcat manager for 'övrigt'
+  openSubcatMenu('övrigt');
+}
+
+function openSubcatMenu(cat){
+  const subcats=getSubcats();
+  const catSubcats=subcats[cat]||[];
+  document.getElementById('subcat-manager-title').textContent='Underkategorier — '+cat.charAt(0).toUpperCase()+cat.slice(1);
+  document.getElementById('subcat-new-input').value='';
+  document.getElementById('subcat-new-input').dataset.cat=cat;
+  const list=document.getElementById('subcat-manager-list');
+  if(!catSubcats.length){
+    list.innerHTML='<p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Inga underkategorier ännu.</p>';
+  } else {
+    list.innerHTML=catSubcats.map(sc=>`
+      <div class="card-sm" style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;font-size:14px;">◆ ${sc}</div>
+        <button class="btn btn-sm btn-danger" onclick="deleteSubcatFromManager('${cat}','${sc}')">✕</button>
+      </div>`).join('');
+  }
+  document.getElementById('modal-subcat-manager').classList.add('open');
+}
+
+function addSubcatFromManager(){
+  const input=document.getElementById('subcat-new-input');
+  const cat=input.dataset.cat;
+  const name=input.value.trim();
+  if(!name){alert('Ange ett namn');return;}
+  const subcats=getSubcats();
+  if(!subcats[cat])subcats[cat]=[];
+  if(!subcats[cat].includes(name))subcats[cat].push(name);
+  saveSubcats(subcats);
+  input.value='';
+  openSubcatMenu(cat);
+  renderHome();
+  showToast('✓ Underkategori tillagd!');
+}
+
+function deleteSubcatFromManager(cat,sc){
+  const subcats=getSubcats();
+  subcats[cat]=(subcats[cat]||[]).filter(s=>s!==sc);
+  saveSubcats(subcats);
+  openSubcatMenu(cat);
+  renderHome();
+}
+
+function openRecipeSubcatManager(){
+  const subcats=getRecipeSubcats();
+  const list=document.getElementById('recipe-subcat-list');
+  document.getElementById('recipe-subcat-new-input').value='';
+  if(!subcats.length){
+    list.innerHTML='<p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Inga kategorier ännu.</p>';
+  } else {
+    list.innerHTML=subcats.map(sc=>`
+      <div class="card-sm" style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;font-size:14px;color:var(--purple);">◆ ${sc}</div>
+        <button class="btn btn-sm btn-danger" onclick="deleteRecipeSubcat('${sc}')">✕</button>
+      </div>`).join('');
+  }
+  document.getElementById('modal-recipe-subcat-manager').classList.add('open');
+}
+
+function addRecipeSubcat(){
+  const input=document.getElementById('recipe-subcat-new-input');
+  const name=input.value.trim();
+  if(!name){alert('Ange ett namn');return;}
+  const subcats=getRecipeSubcats();
+  if(!subcats.includes(name))subcats.push(name);
+  saveRecipeSubcats(subcats);
+  input.value='';
+  openRecipeSubcatManager();
+  renderRecipes();
+  showToast('✓ Kategori tillagd!');
+}
+
+function deleteRecipeSubcat(sc){
+  const subcats=getRecipeSubcats().filter(s=>s!==sc);
+  saveRecipeSubcats(subcats);
+  openRecipeSubcatManager();
+  renderRecipes();
 }
 
 // ---- SAVE MEAL TO CATEGORY ----
